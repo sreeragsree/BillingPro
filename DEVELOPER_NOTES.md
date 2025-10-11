@@ -1,5 +1,49 @@
 # Developer Notes: POS Invoice Updates (2025-10-11)
 
+## POS: Batch-wise Stock Selection and Pricing (2025-10-11)
+
+### Overview
+- Implemented batch selection in Add POS, aligned with Add Sales behavior.
+- Item price, stock, tax, and subtotal now depend on the selected batch.
+- Batch list shows purchase-defined label format: "{sales_price} - {alphabet_price}" (e.g., "280.0000 - GTA").
+- First available batch is selected by default on row add.
+- Prevents duplicate item+batch combinations in the table.
+
+### Files Modified
+1. application/views/pos.php
+   - UI: Added a new "Batch" column next to item name in the POS items table.
+   - JS: Added functions to populate and handle batch selection per row:
+     - populate_batches_for_row(row_id, pro_id) → loads batches via POS endpoint.
+     - batch_change(select, row_id, pro_id) → fetches batch-specific details and recalculates.
+     - checkForDuplicates() → prevents duplicate item+batch combination.
+   - Behavior: Auto-selects the first batch from the fetched list and triggers recalculation.
+
+2. application/controllers/Pos.php
+   - Added get_batches_by_product (GET) endpoint returning batches for a product with quantity > 0:
+     - Path: pos/get_batches_by_product?pro_id={id}
+     - Returns: id, batch_no, quantity, sales_price, alphabet_price, mrp_price
+
+3. application/models/Pos_model.php
+   - Reads selected batch id from tr_batch_id_{i}_111 for each row.
+   - Persists batch_id to db_salesitems on save/update.
+   - Calls update_stock_in_batch($item_id, $batch_id) to maintain batch-level inventory.
+
+### Behavior Details
+- Batch label in dropdown uses purchase data: sales_price (4 decimals) + " - " + alphabet_price.
+- On batch change, the POS fetches details from purchase/get_item_details_with_batch_and_productid with pro_id and batch_id to update:
+  - Stock cell (batch quantity)
+  - Row price (batch sales_price)
+  - Tax/subtotal recalculation
+- The first batch is automatically selected when the row is added, ensuring immediate correct pricing without extra clicks.
+- Duplicate protection: Adding the same item with the same batch twice removes the later row and shows a warning.
+
+### Notes & Compatibility
+- The batch dropdown is only rendered for POS new rows; POS edit rendering can be extended similarly if required.
+- Sales module already had batch selection; this change mirrors that behavior for POS and preserves existing endpoints.
+- No changes were made to DB schema; db_salesitems must already include a batch_id column for persistence.
+
+---
+
 ## Overview
 
 This document outlines the changes made to the POS invoice template, including the removal of the dynamic QR code and addition of a static payment QR code image.
