@@ -182,3 +182,29 @@ ERROR - 2025-10-11 15:56:47 --> 404 Page Not Found: Uploads/store
 ERROR - 2025-10-11 19:27:38 --> Could not find the language line "company_address"
 ERROR - 2025-10-11 15:57:38 --> 404 Page Not Found: Uploads/store
 ERROR - 2025-10-11 19:29:10 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 18:13:46 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-11 18:14:22 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 21:45:40 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 21:45:47 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 21:35:54 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-11 21:36:04 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-11 21:36:22 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-11 21:38:52 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-11 21:39:46 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-11 21:39:54 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-11 21:41:05 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 21:44:29 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 21:54:22 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 21:54:39 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 21:56:08 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 21:58:04 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:02:08 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:02:33 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:04:50 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:08:25 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:09:24 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:09:35 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:09:56 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:20:26 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:28:30 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 22:33:37 --> 404 Page Not Found: Theme/plugins

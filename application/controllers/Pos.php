@@ -183,4 +183,21 @@ class Pos extends MY_Controller {
 		echo $this->pos_model->get_item_details($this->input->post('item_id'));
 	}
 
+	// Return JSON list of batches for a product (quantity > 0)
+	public function get_batches_by_product(){
+		$pro_id = $this->input->get('pro_id');
+		if(empty($pro_id) || !is_numeric($pro_id)){
+			echo json_encode([]);
+			return;
+		}
+		$q = $this->db
+			->select('id,batch_no,quantity,sales_price,alphabet_price,mrp_price')
+			->from('db_batches')
+			->where('pro_id', $pro_id)
+			->where('quantity >', 0)
+			->get();
+		$rows = ($q->num_rows()>0) ? $q->result_array() : [];
+		echo json_encode($rows);
+	}
+
 }

@@ -333,6 +333,7 @@ class Pos_model extends CI_Model {
 			
 				//RECEIVE VALUES FROM FORM
 				$item_id 	=$this->xss_html_filter(trim($_REQUEST['tr_item_id_'.$i]));
+				$batch_id 	= isset($_REQUEST['tr_batch_id_'.$i.'_111']) ? $this->xss_html_filter(trim($_REQUEST['tr_batch_id_'.$i.'_111'])) : null;
 				$sales_qty 	=$this->xss_html_filter(trim($_REQUEST['item_qty_'.$item_id]));
 				$price_per_unit =$this->xss_html_filter(trim($_REQUEST['sales_price_'.$i]));
 				$tax_amt =$this->xss_html_filter(trim($_REQUEST['td_data_'.$i.'_11']));
@@ -377,6 +378,7 @@ class Pos_model extends CI_Model {
 		    				'sales_id' 			=> $sales_id, 
 		    				'sales_status'		=> 'Final', 
 		    				'item_id' 			=> $item_id, 
+		    				'batch_id' 			=> (!empty($batch_id)) ? $batch_id : null,
 		    				'description' 		=> $description, 
 		    				'sales_qty' 		=> $sales_qty,
 		    				'price_per_unit' 	=> $price_per_unit,
@@ -395,6 +397,10 @@ class Pos_model extends CI_Model {
 				$q4 = $this->db->insert('db_salesitems', $salesitems_entry);
 
 				$q11=$this->update_items_quantity($item_id);
+				// Also update batch stock if a batch is selected
+				if(!empty($batch_id)){
+					$this->update_stock_in_batch($item_id,$batch_id);
+				}
 				if(!$q11){
 					return "failed";
 				}

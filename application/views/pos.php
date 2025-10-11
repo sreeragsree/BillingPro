@@ -307,14 +307,15 @@
                   <div class="form-group">
                     <div class="col-sm-12" style="overflow-y:auto;height: 300px;border:1px solid #337ab7;" >
                       <table class="table table-condensed table-bordered  table-responsive items_table" style="">
-                        <thead class="bg-gray">
-                          <th width="30%"><?= $this->lang->line('item_name'); ?></th>
+<thead class="bg-gray">
+                          <th width="25%"><?= $this->lang->line('item_name'); ?></th>
+                          <th width="15%">Batch</th>
                           <th width="10%"><?= $this->lang->line('stock'); ?></th>
-                          <th width="25%"><?= $this->lang->line('quantity'); ?></th>
-                          <th width="15%"><?= $this->lang->line('price'); ?></th>
+                          <th width="20%"><?= $this->lang->line('quantity'); ?></th>
+                          <th width="10%"><?= $this->lang->line('price'); ?></th>
                           <th width="10%"><?= $this->lang->line('discount'); ?>(<?=$CI->currency()?>)</th>
                           <th width="10%"><?= $this->lang->line('tax'); ?></th>
-                          <th width="15%"><?= $this->lang->line('subtotal'); ?></th>
+                          <th width="10%"><?= $this->lang->line('subtotal'); ?></th>
                           <th width="5%"><i class="fa fa-close"></i></th>
                         </thead>
                         <tbody id="pos-form-tbody" style="font-size: 16px;font-weight: bold;overflow: scroll;">
@@ -696,6 +697,12 @@ function addrow(id='',item_obj=''){
 
     var str=' <tr id="row_'+rowcount+'" data-row="0" data-item-id='+item_id+'>';/*item id*/
         str+='<td id="td_'+rowcount+'_0"><a data-toggle="tooltip" title="Click to Change Tax" class="pointer" id="td_data_'+rowcount+'_0" onclick="show_sales_item_modal('+rowcount+')">'+ item_name     +'</a> <i onclick="show_sales_item_modal('+rowcount+')" class="fa fa-edit pointer"></i></td>';/* td_0_0 item name*/ 
+        // Batch dropdown column inserted after item name
+        str+='<td id="td_'+rowcount+'_111">'+
+             '<select onchange="batch_change(this,'+rowcount+','+item_id+')" id="tr_batch_id_'+rowcount+'_111" name="tr_batch_id_'+rowcount+'_111" class="form-control no-padding batchListing">'+
+             '<option value="">Choose</option>'+
+             '</select>'+
+             '</td>';
         str+='<td id="td_'+rowcount+'_1">'+ stock +'</td>';/* td_0_1 item available qty*/
         str+='<td id="td_'+rowcount+'_2">'+ quantity      +'</td>';/* td_0_2 item available qty*/
             info='<input id="sales_price_'+rowcount+'" onblur="set_to_original('+rowcount+','+item_cost+')" onkeyup="update_price('+rowcount+','+item_cost+')" name="sales_price_'+rowcount+'" type="text" class="form-control no-padding min_width" value="'+sales_price+'">';
@@ -727,6 +734,9 @@ function addrow(id='',item_obj=''){
     //LEFT SIDE: ADD OR APPEND TO SALES INVOICE TERMINAL
     $('#pos-form-tbody').append(str);
 
+    // Populate batch options for this row
+    populate_batches_for_row(rowcount, item_id);
+
     //LEFT SIDE: INCREMANT ROW COUNT
     $("#hidden_rowcount").val(parseFloat($("#hidden_rowcount").val())+1);
     failed.currentTime = 0;
@@ -734,6 +744,92 @@ function addrow(id='',item_obj=''){
     //CALCULATE FINAL TOTAL AND OTHER OPERATIONS
     make_subtotal(item_id,rowcount);
   }
+
+// Fetch batch list for an item and populate select
+function populate_batches_for_row(row_id, pro_id){
+  var base_url=$("#base_url").val();
+  $.get(base_url+"pos/get_batches_by_product", { pro_id: pro_id }, function(result){
+     try{
+        var data = JSON.parse(result);
+        var $sel = $("#tr_batch_id_"+row_id+"_111");
+        $sel.empty();
+        $sel.append('<option value="">Choose</option>');
+        if(Array.isArray(data)){
+          data.forEach(function(b, idx){
+            var sp = isNaN(parseFloat(b.sales_price)) ? b.sales_price : parseFloat(b.sales_price).toFixed(4);
+            var ap = (b.alphabet_price || '').toString().trim();
+            var label = sp + ' - ' + ap;
+            $sel.append('<option value="'+b.id+'">'+label+'</option>');
+          });
+          if(data.length > 0){
+            $sel.val(data[0].id);
+          }
+        }
+        $sel.trigger('change');
+     }catch(e){
+        console.error('Invalid batch list response', e, result);
+     }
+  }).fail(function(xhr){
+    console.error('Failed to fetch batches', xhr.responseText);
+  });
+}
+
+function batch_change(selectElement, row_id, pro_id) {
+  var selectedValue = selectElement.value;
+  if(!checkForDuplicates()){ return; }
+  if(!selectedValue){
+    $("#sales_price_"+row_id).val(0);
+    $("#td_data_"+row_id+"_11").val(0);
+    $("#td_data_"+row_id+"_4").val(0);
+    make_subtotal($("#tr_item_id_"+row_id).val(), row_id);
+    return;
+  }
+  var base_url=$("#base_url").val();
+  $.get(base_url + "purchase/get_item_details_with_batch_and_productid", {
+      pro_id: pro_id,
+      batch_id: selectedValue
+    }, function(result){
+      try{
+        var jsonData = JSON.parse(result);
+        if(!jsonData || jsonData.error){
+          return;
+        }
+        $("#td_"+row_id+"_1").text(jsonData.quantity);
+        if(parseFloat(jsonData.sales_price) > 0){
+          $("#sales_price_"+row_id).val(jsonData.sales_price);
+        }
+        var item_id = $("#tr_item_id_"+row_id).val();
+        make_subtotal(item_id, row_id);
+      }catch(e){
+        console.error('Invalid JSON', e, result);
+      }
+    }
+  ).fail(function(xhr){
+    console.error('AJAX Error:', xhr.responseText);
+  });
+}
+
+function checkForDuplicates() {
+  const rows = document.querySelectorAll("#pos-form-tbody tr");
+  const combinations = new Set();
+  for (const row of rows){
+    const itemIdInput = row.querySelector("[id^='tr_item_id_']");
+    const batchSelect = row.querySelector("[id^='tr_batch_id_']");
+    if(!itemIdInput || !batchSelect){ continue; }
+    const itemId = (itemIdInput.value||'').trim();
+    const batchNo = (batchSelect.value||'').trim() || '0';
+    if(itemId && batchNo){
+      const key = `${itemId}-${batchNo}`;
+      if(combinations.has(key)){
+        toastr["warning"]("Duplicate entry detected");
+        row.remove();
+        return false;
+      }
+      combinations.add(key);
+    }
+  }
+  return true;
+}
 
 function update_price(row_id,item_cost){
   /*Input*/
