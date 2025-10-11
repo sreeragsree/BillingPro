@@ -98,3 +98,52 @@ ERROR - 2025-10-11 15:47:50 --> Could not find the language line "company_addres
 ERROR - 2025-10-11 12:17:50 --> 404 Page Not Found: Uploads/store
 ERROR - 2025-10-11 15:48:36 --> Could not find the language line "company_address"
 ERROR - 2025-10-11 12:18:36 --> 404 Page Not Found: Uploads/store
+ERROR - 2025-10-11 16:24:01 --> Could not find the language line "close"
+ERROR - 2025-10-11 12:54:01 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 16:26:09 --> Could not find the language line "close"
+ERROR - 2025-10-11 12:56:09 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 16:27:27 --> Could not find the language line "close"
+ERROR - 2025-10-11 12:57:27 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 12:57:27 --> 404 Page Not Found: A04e9268085a5ae29086571a2f5b8c60_thumbjpg/index
+ERROR - 2025-10-11 12:57:34 --> 404 Page Not Found: A04e9268085a5ae29086571a2f5b8c60jpg/index
+ERROR - 2025-10-11 16:31:37 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:01:37 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:01:38 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 16:33:02 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:03:02 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:03:03 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 16:34:07 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:04:07 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:04:07 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 16:34:31 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:04:31 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:04:31 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 16:36:09 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:06:09 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:06:09 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 16:39:49 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:09:50 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:09:50 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 13:09:52 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 13:09:52 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 13:10:53 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 16:42:26 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:12:26 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:12:26 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 16:42:29 --> Query error: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near '"
+FROM `db_items` `i`
+LEFT JOIN `db_category` `c` ON `c`.`id` = `i`.`category...' at line 1 - Invalid query: SELECT `i`.*, `c`.`category_name`, `u`.`unit_name`, `b`.`brand_name`, CONCAT("
+FROM `db_items` `i`
+LEFT JOIN `db_category` `c` ON `c`.`id` = `i`.`category_id`
+LEFT JOIN `db_units` `u` ON `u`.`id` = `i`.`unit_id`
+LEFT JOIN `db_brands` `b` ON `b`.`id` = `i`.`brand_id`
+WHERE `i`.`id` = '1012 class='
+AND `i`.`store_id` = '2'
+ERROR - 2025-10-11 16:43:39 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:13:39 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:13:40 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 13:14:07 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 13:14:07 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 16:45:13 --> Could not find the language line "close"
+ERROR - 2025-10-11 13:15:13 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-11 13:15:13 --> 404 Page Not Found: Uploads/items

@@ -267,6 +267,19 @@ $.ajaxSetup({
         if (response.status == 'success' && response.data) {
           // Restore the modal structure and populate with data
           var modalContent = `
+            <div class="row mb-3">
+              <div class="col-md-12 text-center">
+                <div class="item-image-container" style="max-width: 200px; margin: 0 auto 15px;">
+                  <img 
+                    src="${response.data.image_url || baseUrl + 'uploads/items/no_image.png'}" 
+                    alt="${response.data.item_name || 'Item Image'}" 
+                    class="img-fluid img-thumbnail"
+                    style="max-height: 200px; object-fit: contain;"
+                    onerror="this.onerror=null; this.src='${baseUrl + 'uploads/items/no_image.png'}'"
+                  >
+                </div>
+              </div>
+            </div>
             <div class="row">
               <div class="col-md-4">
                 <div class="form-group">

@@ -10,7 +10,7 @@ class Items_model extends CI_Model
      * @return array|bool Returns the item data as an array or false if not found
      */
     public function get_item_details($item_id) {
-      $this->db->select('i.*, c.category_name, u.unit_name, b.brand_name, 
+        $this->db->select('i.*, c.category_name, u.unit_name, b.brand_name, 
                   (SELECT COALESCE(SUM(qty), 0) FROM db_items_stock_entries WHERE item_id = i.id) as stock,
                   FORMAT(i.price, 2) as price_formatted,
                   FORMAT(i.purchase_price, 2) as purchase_price_formatted,
@@ -27,7 +27,30 @@ class Items_model extends CI_Model
         $query = $this->db->get();
         
         if ($query->num_rows() > 0) {
-            return $query->row_array();
+            $item = $query->row_array();
+            
+            // Add image paths to the item data
+            if (!empty($item['item_image'])) {
+                // If the image path doesn't already include 'uploads/items', prepend it
+                if (strpos($item['item_image'], 'uploads/items/') === false) {
+                    $item['item_image'] = 'uploads/items/' . $item['item_image'];
+                }
+                $item['image_url'] = base_url($item['item_image']);
+                
+                // Check and create thumbnail path if it exists
+                $thumb_path = str_replace('uploads/items/', 'uploads/items/thumbs/', $item['item_image']);
+                if (file_exists(FCPATH . $thumb_path)) {
+                    $item['thumbnail_url'] = base_url($thumb_path);
+                } else {
+                    $item['thumbnail_url'] = $item['image_url'];
+                }
+            } else {
+                // Set default image paths if no image is set
+                $item['image_url'] = base_url('uploads/items/no_image.png');
+                $item['thumbnail_url'] = $item['image_url'];
+            }
+            
+            return $item;
         }
         
         return false;

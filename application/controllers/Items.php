@@ -60,6 +60,28 @@ class Items extends MY_Controller {
 	        if($query->num_rows() > 0) {
 	            $item = $query->row_array();
 	            
+	            // Ensure image URLs are properly formatted
+	            if(!empty($item['item_image'])) {
+	                // If item_image doesn't start with 'uploads/items/', prepend it
+	                if (strpos($item['item_image'], 'uploads/items/') === false) {
+	                    $item['item_image'] = 'uploads/items/' . $item['item_image'];
+	                }
+	                $item['image_url'] = base_url($item['item_image']);
+	                
+	                // Generate thumbnail URL
+	                $thumb_filename = basename($item['item_image']);
+	                $item['thumbnail_url'] = base_url('uploads/items/thumbs/' . $thumb_filename);
+	                
+	                // Check if thumbnail exists, if not use original image
+	                if (!file_exists(FCPATH . 'uploads/items/thumbs/' . $thumb_filename)) {
+	                    $item['thumbnail_url'] = $item['image_url'];
+	                }
+	            } else {
+	                // Set default image paths if no image is set
+	                $item['image_url'] = base_url('uploads/items/no_image.png');
+	                $item['thumbnail_url'] = $item['image_url'];
+	            }
+	            
 	            // For now, set stock to 0 since the stock calculation is complex
 	            // You can implement proper stock calculation later using the custom helper
 	            $item['stock'] = 0;
@@ -354,11 +376,11 @@ class Items extends MY_Controller {
 			$row[] = '<input type="checkbox" name="checkbox[]" value='.$items->id.' class="checkbox column_checkbox" >';
 						
 
-			$row[] = (!empty($items->item_image)) ? "
-						<a title='Click for Bigger!' href='".base_url($items->item_image)."' data-toggle='lightbox'>
-						<image style='border:1px #72afd2 solid;' src='".base_url(return_item_image_thumb($items->item_image))."' width='75%' height='50%'> </a>" : "
-						<image style='border:1px #72afd2 solid;' src='".base_url()."theme/images/no_image.png' title='No Image!' width='75%' height='50%' >";
-			
+			$image_path = !empty($items->item_image) ? "uploads/items/" . $items->item_image : "uploads/items/no_image.png";
+			$row[] = "<a href='" . base_url($image_path) . "' data-toggle='lightbox' data-title='" . htmlspecialchars($items->item_name, ENT_QUOTES) . "'>
+					<img src='" . base_url($image_path) . "' width='50' height='50' class='img-circle img-thumbnail' alt='Item Image'>
+				  </a>";
+
 			$row[] = $items->item_code;
 
 			$str = "";
