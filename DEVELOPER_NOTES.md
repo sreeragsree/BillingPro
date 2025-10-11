@@ -1,8 +1,38 @@
-# Developer Notes: Item Details Modal Implementation Req by(10-10-2025 ManojKumar)
+# Developer Notes: POS Invoice Updates (2025-10-11)
 
 ## Overview
 
-This document outlines all the changes made to implement a comprehensive item details modal in the billing system. The modal displays item information, supplier details, and batch information in a table format.
+This document outlines the changes made to the POS invoice template, including the removal of the dynamic QR code and addition of a static payment QR code image.
+
+## POS Invoice Template Updates
+
+### 1. `application/views/sal-invoice-pos.php`
+
+**Purpose**: Updated the POS invoice template to replace the dynamic QR code with a static payment QR code image.
+
+#### Changes Made:
+
+- Removed dynamic QR code generation using `$CI->print_qr($sales_code)`
+- Added static payment QR code image: `theme/dist/img/payQr.png`
+- Positioned the QR code above the print button for better visibility
+- Added proper spacing and styling for the QR code display
+
+#### Key Features:
+
+- Simplified the invoice footer by removing unnecessary QR code generation
+- Improved print layout with better spacing
+- Added a clean, professional payment QR code for customer convenience
+
+### 2. Image Assets
+
+- Added: `theme/dist/img/payQr.png` - Static payment QR code image
+- Removed: `theme/dist/img/logo1.png` - Unused logo image
+
+## Previous Notes: Item Details Modal Implementation
+
+### Overview
+
+This section documents the implementation of the item details modal in the billing system. The modal displays item information, supplier details, and batch information in a table format.
 
 ## Files Modified
 
@@ -268,8 +298,6 @@ The changes should be tested to ensure:
 4. HTML is properly escaped to prevent XSS
 5. The layout remains consistent with the existing design
 
-
-
 ## 2. Balance Payable Feature Update
 
 ### Overview
@@ -328,13 +356,21 @@ function calculate_balance_payable() {
 }
 ```
 
-
 ## Tasks
 
 * [X] Item list view model created with image view in it.
 * [X] in pos template view added other charges in prints
 * [X] supplier code / supplier item displayed in view
 * [X] Balance payable to customer
+
+  FILE TOUCHED
+
+  applications/views/sales.php
+* [X] Fixed logo loading issue in bill and payment qr at bottom of bill (change the name of logo placed at top of pos receipt view from kdc_logo_pos.png to kdc_logo_pos4.png and for Qr code placed in theme/dist/img/payQr.png)
+
+FILE TOUCHED
+
+application/views/sal-invoice-pos.php
 
 ---
 
