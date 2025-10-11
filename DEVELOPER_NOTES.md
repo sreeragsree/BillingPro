@@ -268,9 +268,73 @@ The changes should be tested to ensure:
 4. HTML is properly escaped to prevent XSS
 5. The layout remains consistent with the existing design
 
-## * [X] Item list view model created
-* [X] Added supplier item code in item creation and display it in model
-* [X] in pos template view added other charges view
+
+
+## 2. Balance Payable Feature Update
+
+### Overview
+
+Added a dynamic Balance Payable feature to the sales form that calculates and displays the remaining balance when processing cash payments.
+
+### Files Modified
+
+#### [application/views/sales.php](cci:7://file:///c:/xampp/htdocs/BILLING/application/views/sales.php:0:0-0:0)
+
+**Purpose**: Added interactive balance calculation for cash payments.
+
+**Changes Made**:
+
+1. **Added Cash Collected Input Field**
+
+   - Positioned next to the payment type dropdown
+   - Formatted for currency input
+   - Updates the balance in real-time
+2. **Enhanced Balance Payable Display**
+
+   - Large, prominent display (24px font)
+   - Color-coded feedback:
+     - Orange (#f39c12) when balance is due
+     - Red (#f56954) for overpayment
+     - Green (#00a65a) when fully paid
+   - Visual styling with background, border, and shadow
+3. **JavaScript Functionality**
+
+   - Real-time calculation of balance (Grand Total - Cash Collected)
+   - Automatic updates when:
+     - Page loads
+     - Cash collected amount changes
+     - Payment type changes
+     - Grand total changes
+
+**Key Code Snippets**:
+
+```javascript
+// Balance calculation function
+function calculate_balance_payable() {
+   var grand_total = parseFloat($("#total_amt").text().replace(/,/g, '')) || 0;
+   var cash_collected = parseFloat($("#cash_collected").val().replace(/,/g, '')) || 0;
+   var balance_payable = grand_total - cash_collected;
+   
+   // Update display and styling based on balance
+   $("#balance_payable").text(balance_payable.toFixed(2));
+   
+   if (balance_payable > 0) {
+      $("#balance_payable").css('color', '#f39c12'); // Orange
+   } else if (balance_payable < 0) {
+      $("#balance_payable").css('color', '#f56954'); // Red
+   } else {
+      $("#balance_payable").css('color', '#00a65a'); // Green
+   }
+}
+```
+
+
+## Tasks
+
+* [X] Item list view model created with image view in it.
+* [X] in pos template view added other charges in prints
+* [X] supplier code / supplier item displayed in view
+* [X] Balance payable to customer
 
 ---
 

@@ -147,3 +147,38 @@ ERROR - 2025-10-11 13:14:07 --> 404 Page Not Found: Uploads/items
 ERROR - 2025-10-11 16:45:13 --> Could not find the language line "close"
 ERROR - 2025-10-11 13:15:13 --> 404 Page Not Found: Theme/bower_components
 ERROR - 2025-10-11 13:15:13 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-11 15:00:07 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 18:37:22 --> Could not find the language line "cash_collected"
+ERROR - 2025-10-11 18:38:44 --> Could not find the language line "cash_collected"
+ERROR - 2025-10-11 15:08:50 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 18:40:52 --> Could not find the language line "cash_collected"
+ERROR - 2025-10-11 15:10:55 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 18:42:48 --> Could not find the language line "cash_collected"
+ERROR - 2025-10-11 15:12:54 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 18:43:44 --> Could not find the language line "cash_collected"
+ERROR - 2025-10-11 15:13:47 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 18:46:23 --> Could not find the language line "cash_collected"
+ERROR - 2025-10-11 15:16:43 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 18:49:41 --> Could not find the language line "cash_collected"
+ERROR - 2025-10-11 15:19:45 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 15:22:31 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 15:26:11 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 15:27:50 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 15:34:54 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 15:37:30 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 15:40:34 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-11 19:16:40 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 15:46:40 --> 404 Page Not Found: Uploads/store
+ERROR - 2025-10-11 19:18:37 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 15:48:37 --> 404 Page Not Found: Uploads/store
+ERROR - 2025-10-11 19:19:13 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 15:49:13 --> 404 Page Not Found: Uploads/store
+ERROR - 2025-10-11 19:20:26 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 15:50:27 --> 404 Page Not Found: Uploads/store
+ERROR - 2025-10-11 19:26:15 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 15:56:15 --> 404 Page Not Found: Uploads/store
+ERROR - 2025-10-11 19:26:47 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 15:56:47 --> 404 Page Not Found: Uploads/store
+ERROR - 2025-10-11 19:27:38 --> Could not find the language line "company_address"
+ERROR - 2025-10-11 15:57:38 --> 404 Page Not Found: Uploads/store
+ERROR - 2025-10-11 19:29:10 --> Could not find the language line "company_address"

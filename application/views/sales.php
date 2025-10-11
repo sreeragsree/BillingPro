@@ -586,6 +586,26 @@
                                                    <span id="payment_type_msg" style="display:none" class="text-danger"></span>
                                                 </div>
                                              </div>
+                                          </div>
+                                          <!-- Cash Fields Container -->
+                                          <div id="cash_fields_container" style="display: none;">
+                                             <div class="row">
+                                                <div class="col-md-4">
+                                                   <div class="">
+                                                      <label for="cash_collected">Cash Collected</label>
+                                                      <input type="text" class="form-control text-right only_currency" id="cash_collected" name="cash_collected" onkeyup="calculate_balance_payable()" value="0.00">
+                                                   </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                   <div class="form-group" style="margin-top: 25px;">
+                                                      <label class="control-label">Balance Payable: 
+                                                         <span id="balance_payable" class="text-bold" style="font-size: 16px;">0.00</span>
+                                                      </label>
+                                                   </div>
+                                                </div>
+                                             </div>
+                                          </div>
+                                          <div class="row">
                                              <div class="col-md-4">
                                                 <label for="account_id"><?= $this->lang->line('account'); ?></label>
                                                 <select class="form-control select2" id='account_id' name="account_id">
@@ -856,20 +876,34 @@
       }
 
       $("#payment_type").on("change", function() {
+         show_payment_type_fields();
          show_cheque_details();
       });
 
+      function show_payment_type_fields() {
+         var payment_type = $("#payment_type").val();
+         var payment_type_text = payment_type ? payment_type.toLowerCase() : '';
+         
+         // Show/hide cash collected fields
+         if (payment_type_text.includes('cash')) {
+            $("#cash_fields_container").show();
+         } else {
+            $("#cash_fields_container").hide();
+            // Reset cash collected when hiding
+            $("#cash_collected").val('0.00');
+            calculate_balance_payable();
+         }
+      }
+
       function show_cheque_details() {
          var payment_type = $("#payment_type").val();
-         if (payment_type.toUpperCase() == '<?= strtoupper(cheque_name()) ?>') {
+         if (payment_type && payment_type.toUpperCase() == '<?= strtoupper(cheque_name()) ?>') {
             $(".cheque_div").show();
          } else {
             $(".cheque_div").hide();
             $("#cheque_period,#cheque_number").val('');
          }
       }
-
-
 
       function set_previous_due(previous_due, tot_advance) {
          $(".customer_previous_due").html(previous_due);
@@ -1106,9 +1140,51 @@
             $("#amount").val('0.00');
          }
 
-         // adjust_payments();
-         //alert("final_total() end");
+         calculate_balance_payable();
       }
+      
+      /* ---------- Calculate Balance Payable ------------*/
+      function calculate_balance_payable() {
+         try {
+            // Get the grand total and cash collected values
+            var grand_total = parseFloat($("#total_amt").text().replace(/,/g, '')) || 0;
+            var cash_collected = parseFloat($("#cash_collected").val().replace(/,/g, '')) || 0;
+            
+            // Calculate balance payable
+            var balance_payable = grand_total - cash_collected;
+            
+            // Update the display
+            $("#balance_payable").text(balance_payable.toFixed(2));
+            
+            // Update colors based on balance
+            if (balance_payable > 0) {
+               $("#balance_payable").css('color', '#f39c12'); // Orange for amount due
+            } else if (balance_payable < 0) {
+               $("#balance_payable").css('color', '#f56954'); // Red for overpayment
+            } else {
+               $("#balance_payable").css('color', '#00a65a'); // Green for exact payment
+            }
+         } catch (e) {
+            console.error("Error in calculate_balance_payable:", e);
+         }
+      }
+      
+      // Initialize balance payable on page load
+      $(document).ready(function() {
+         // Initial calculation
+         calculate_balance_payable();
+         
+         // Recalculate when cash collected changes
+         $("#cash_collected").on("keyup change", function() {
+            calculate_balance_payable();
+         });
+         
+         // Recalculate when payment type changes
+         $("#payment_type").on("change", function() {
+            calculate_balance_payable();
+         });
+      });
+      
       /* ---------- Final Description of amount end ------------*/
 
       function removerow(id) { //id=Rowid

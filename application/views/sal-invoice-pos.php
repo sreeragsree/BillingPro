@@ -514,30 +514,15 @@
 						<td colspan="<?=$mrp_column+5?>" align="center">----------<?= $this->lang->line('thanks_you_visit_again'); ?>----------</td>
 					</tr>
 
-					<tr>
-						<td colspan="<?=$mrp_column+5?>" align="center">
-						<?php 
-								//if the parameter value has slash
-								 $sales_code = str_replace('=', '-', str_replace('/', '_', base64_encode($sales_code)));
-						?>
-							<div style="display:inline-block;vertical-align:middle;line-height:16px !important;">
-								
-								<?php
-
-								echo $CI->print_qr($sales_code);
-								?>
-
-							</div>
-						
-						</td>
-					</tr>
-
 					</tfoot>
 				</table>
 			</td>
 		</tr>
 	</table>
 	<center >
+  <div style="margin: 20px 0;">
+    <img src="<?= base_url('theme/dist/img/payQr.png') ?>" alt="Logo" style="max-width: 150px; height: auto;">
+  </div>
   <div class="row no-print">
   <div class="col-md-12">
   <div class="col-md-2 col-md-offset-5 col-xs-4 col-xs-offset-4 form-group">
