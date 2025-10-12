@@ -1,5 +1,57 @@
 # Developer Notes: POS Invoice Updates (2025-10-11)
 
+## POS: Multi-batch lines, per-row quantity/tax fixes, and default batch (2025-10-12)
+
+### Overview
+- Allow multiple cart lines for the same item, one per selected batch.
+- Prevent duplicates based on the Item+Batch combination (not just Item).
+- Make quantity row-specific to avoid DOM id collisions when the same item appears multiple times.
+- Fix tax computation to use the row’s quantity and reflect Inclusive/Exclusive correctly.
+- Auto-select a default batch when an item is added (first available for that item not already used in the cart).
+
+### Key Behavior
+- Add-to-cart: the same product can be added multiple times; each row has its own batch select.
+- Duplicate rule: choosing a batch that’s already used for that product in the cart shows a warning and reverts the selection (doesn’t delete the row).
+- Default batch: when loading batches for a new row, we select the first batch not already used for that product; if all are used, the dropdown stays blank.
+- Quantity handling:
+  - Visible qty input is now per-row: `#item_qty_vis_{row}`.
+  - Hidden row value posted to backend: `item_qty_{row}`.
+  - Backend reads `item_qty_{i}` for the i-th row, ensuring independent quantities per row.
+- Tax handling:
+  - `set_tax_value(row_id)` uses `#item_qty_vis_{row_id}` for the taxable base.
+  - Tax amount is stored in `#td_data_{row}_11` and applied by `make_subtotal()` respecting Inclusive/Exclusive.
+
+### Files Modified
+1) application/views/pos.php
+   - UI: Batch column remains; quantity input now row-scoped (`item_qty_vis_{row}`) with a hidden posted field (`item_qty_{row}`).
+   - JS:
+     - `addrow()`: renders row-scoped qty inputs; initializes batch select.
+     - `populate_batches_for_row(row_id, pro_id)`: fetches batch list and auto-selects the first unused batch for that item (or saved batch on edit).
+     - `batch_change(select,row_id,pro_id)`: updates stock, price, and subtotal; validates against duplicate Item+Batch.
+     - `checkForDuplicates()`: checks Item+Batch pairs; returns false on duplicates (no row removal).
+     - `increment_qty/decrement_qty/item_qty_input`: all read/write `#item_qty_vis_{row}` and sync to `item_qty_{row}`.
+     - `set_tax_value(row_id)`: switched to row-scoped qty; keeps writing tax amount to `td_data_{row}_11`.
+     - `make_subtotal(item_id,row_id)`: sequence unchanged; uses `td_data_{row}_11` and respects tax type.
+     - Totals: aggregates quantities from `#item_qty_row_{i}` to avoid id conflicts.
+
+2) application/controllers/Pos.php
+   - New endpoint: `get_batches_by_product` (GET)
+     - Params: `pro_id`
+     - Returns batch rows (id, batch_no, quantity, sales_price, alphabet_price, mrp_price) with `quantity > 0`.
+
+3) application/models/Pos_model.php
+   - Save/Update: reads quantity from `item_qty_{i}` instead of `item_qty_{item_id}`.
+   - Persists selected `batch_id` for each line item to `db_salesitems`.
+   - Updates batch stock via `update_stock_in_batch($item_id,$batch_id)` in addition to item stock.
+   - Edit flow output: renders batch cell with hidden saved id; on POS page load, JS populates and selects the saved batch.
+
+### Notes
+- The batch dropdown option label remains: `{sales_price(4dp)} - {alphabet_price}`.
+- If you prefer a different auto-select policy (e.g., oldest expiry, highest quantity), adjust the selector in `populate_batches_for_row()`.
+- Ensure `db_salesitems.batch_id` exists; no schema migration included here.
+
+---
+
 ## POS: Batch-wise Stock Selection and Pricing (2025-10-11)
 
 ### Overview

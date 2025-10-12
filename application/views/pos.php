@@ -690,8 +690,9 @@ function addrow(id='',item_obj=''){
         sales_price     =to_Fixed(sales_price);
 
     var quantity        ='<div class="input-group input-group-sm"><span class="input-group-btn"><button onclick="decrement_qty('+item_id+','+rowcount+')" type="button" class="btn btn-default btn-flat"><i class="fa fa-minus text-danger"></i></button></span>';
-        quantity       +='<input typ="text" value="'+format_qty(1)+'" class="form-control no-padding text-center min_width" onchange="item_qty_input('+item_id+','+rowcount+')" id="item_qty_'+item_id+'" name="item_qty_'+item_id+'">';
+        quantity       +='<input typ="text" value="'+format_qty(1)+'" class="form-control no-padding text-center min_width" onchange="item_qty_input('+item_id+','+rowcount+')" id="item_qty_vis_'+rowcount+'" name="item_qty_'+item_id+'">';
         quantity       +='<span class="input-group-btn"><button onclick="increment_qty('+item_id+','+rowcount+')" type="button" class="btn btn-default btn-flat"><i class="fa fa-plus text-success"></i></button></span></div>';
+    var hiddenQty      = '<input type="hidden" id="item_qty_row_'+rowcount+'" name="item_qty_'+rowcount+'" value="'+format_qty(1)+'">';
     var sub_total       =(to_Fixed(1)*to_Fixed(sales_price));//Initial
     var remove_btn      ='<a class="fa fa-fw fa-trash-o text-red" style="cursor: pointer;font-size: 20px;" onclick="removerow('+rowcount+')" title="Delete Item?"></a>';
 
@@ -702,9 +703,10 @@ function addrow(id='',item_obj=''){
              '<select onchange="batch_change(this,'+rowcount+','+item_id+')" id="tr_batch_id_'+rowcount+'_111" name="tr_batch_id_'+rowcount+'_111" class="form-control no-padding batchListing">'+
              '<option value="">Choose</option>'+
              '</select>'+
+             '<input type="hidden" id="tr_batch_id_'+rowcount+'_saved" value="">'+
              '</td>';
         str+='<td id="td_'+rowcount+'_1">'+ stock +'</td>';/* td_0_1 item available qty*/
-        str+='<td id="td_'+rowcount+'_2">'+ quantity      +'</td>';/* td_0_2 item available qty*/
+        str+='<td id="td_'+rowcount+'_2">'+ quantity + hiddenQty +'</td>';/* td_0_2 item available qty*/
             info='<input id="sales_price_'+rowcount+'" onblur="set_to_original('+rowcount+','+item_cost+')" onkeyup="update_price('+rowcount+','+item_cost+')" name="sales_price_'+rowcount+'" type="text" class="form-control no-padding min_width" value="'+sales_price+'">';
         str+='<td id="td_'+rowcount+'_3" class="text-right">'+ info   +'</td>';/* td_0_3 item sales price*/
 
@@ -761,11 +763,34 @@ function populate_batches_for_row(row_id, pro_id){
             var label = sp + ' - ' + ap;
             $sel.append('<option value="'+b.id+'">'+label+'</option>');
           });
-          if(data.length > 0){
-            $sel.val(data[0].id);
+          var savedId = $("#tr_batch_id_"+row_id+"_saved").val();
+          var selectedId = null;
+          if(savedId){
+            selectedId = savedId;
+          } else {
+            // Choose the first batch that doesn't duplicate existing item+batch rows
+            var used = new Set();
+            document.querySelectorAll("#pos-form-tbody tr").forEach(function(tr){
+              var itemIdEl = tr.querySelector("[id^='tr_item_id_']");
+              var batchSel = tr.querySelector("[id^='tr_batch_id_']");
+              if(!itemIdEl || !batchSel) return;
+              var itemId = (itemIdEl.value||'').trim();
+              var batchId = (batchSel.value||'').trim();
+              if(itemId && batchId && parseInt(itemId,10) === parseInt(pro_id,10)){
+                used.add(batchId);
+              }
+            });
+            for(var i=0;i<data.length;i++){
+              var cand = String(data[i].id);
+              if(!used.has(cand)) { selectedId = cand; break; }
+            }
+            // if all batches are used, leave unselected (user will choose)
+          }
+          if(selectedId){
+            $sel.val(selectedId);
+            $sel.trigger('change');
           }
         }
-        $sel.trigger('change');
      }catch(e){
         console.error('Invalid batch list response', e, result);
      }
@@ -776,7 +801,15 @@ function populate_batches_for_row(row_id, pro_id){
 
 function batch_change(selectElement, row_id, pro_id) {
   var selectedValue = selectElement.value;
-  if(!checkForDuplicates()){ return; }
+  // Only check duplicates when a concrete batch is selected
+  if(selectedValue){
+    if(!checkForDuplicates()){
+      toastr["warning"]("Duplicate item+batch detected. Please choose a different batch.");
+      // revert this selection
+      $(selectElement).val("");
+      return;
+    }
+  }
   if(!selectedValue){
     $("#sales_price_"+row_id).val(0);
     $("#td_data_"+row_id+"_11").val(0);
@@ -799,6 +832,15 @@ function batch_change(selectElement, row_id, pro_id) {
           $("#sales_price_"+row_id).val(jsonData.sales_price);
         }
         var item_id = $("#tr_item_id_"+row_id).val();
+        // Clamp quantity to available stock for the selected batch
+        var $qty = $("#item_qty_vis_"+row_id);
+        var currQty = parseFloat($qty.val());
+            currQty = isNaN(currQty) ? 0 : currQty;
+        var stock = parseFloat(jsonData.quantity);
+            stock = isNaN(stock) ? 0 : stock;
+        if(currQty > stock){
+          $qty.val(format_qty(stock));
+        }
         make_subtotal(item_id, row_id);
       }catch(e){
         console.error('Invalid JSON', e, result);
@@ -817,12 +859,10 @@ function checkForDuplicates() {
     const batchSelect = row.querySelector("[id^='tr_batch_id_']");
     if(!itemIdInput || !batchSelect){ continue; }
     const itemId = (itemIdInput.value||'').trim();
-    const batchNo = (batchSelect.value||'').trim() || '0';
+    const batchNo = (batchSelect.value||'').trim(); // ignore blanks
     if(itemId && batchNo){
       const key = `${itemId}-${batchNo}`;
       if(combinations.has(key)){
-        toastr["warning"]("Duplicate entry detected");
-        row.remove();
         return false;
       }
       combinations.add(key);
@@ -870,27 +910,30 @@ function set_to_original(row_id,item_cost) {
 //INCREMENT ITEM
 function increment_qty(item_id,rowcount){
   var service_bit=$("#service_bit_"+rowcount).val();
-  var item_qty=$("#item_qty_"+item_id).val();
+var item_qty=$("#item_qty_vis_"+rowcount).val();
   var stock=$("#td_"+rowcount+"_1").html();
   if(service_bit==1 || parseFloat(item_qty)<parseFloat(stock)){
     item_qty=parseFloat(item_qty)+1;
-    $("#item_qty_"+item_id).val(format_qty(item_qty));
+    $("#item_qty_vis_"+rowcount).val(format_qty(item_qty));
+    $("#item_qty_row_"+rowcount).val($("#item_qty_vis_"+rowcount).val());
   }
   make_subtotal(item_id,rowcount);
 }
 //DECREMENT ITEM
 function decrement_qty(item_id,rowcount){
-  var item_qty=$("#item_qty_"+item_id).val();
+  var item_qty=$("#item_qty_vis_"+rowcount).val();
   if(item_qty<=1){
-    $("#item_qty_"+item_id).val(format_qty(1));
+    $("#item_qty_vis_"+rowcount).val(format_qty(1));
+    $("#item_qty_row_"+rowcount).val($("#item_qty_vis_"+rowcount).val());
     return;
   }
-  $("#item_qty_"+item_id).val(format_qty(parseFloat(item_qty)-1));
+  $("#item_qty_vis_"+rowcount).val(format_qty(parseFloat(item_qty)-1));
+  $("#item_qty_row_"+rowcount).val($("#item_qty_vis_"+rowcount).val());
   make_subtotal(item_id,rowcount);
 }
 //LEFT SIDE: IF ITEM QTY CHANGED MANUALLY
 function item_qty_input(item_id,rowcount){
-  var item_qty=$("#item_qty_"+item_id).val();
+  var item_qty=$("#item_qty_vis_"+rowcount).val();
   var service_bit=$("#service_bit_"+rowcount).val();
   var stock=$("#td_"+rowcount+"_1").html();
 
@@ -900,12 +943,12 @@ function item_qty_input(item_id,rowcount){
       //return;  
     }
     if(parseFloat(item_qty)>parseFloat(stock)){
-      $("#item_qty_"+item_id).val(format_qty(stock));
+      $("#item_qty_vis_"+rowcount).val(format_qty(stock));
       toastr["warning"]("Oops! You have only "+stock+" items in Stock");
      // return;
     }
     if(item_qty==0){
-      $("#item_qty_"+item_id).val(format_qty(1));
+      $("#item_qty_vis_"+rowcount).val(format_qty(1));
       toastr["warning"]("You must have atlease one Quantity");
       //return; 
     }
@@ -915,6 +958,8 @@ function item_qty_input(item_id,rowcount){
       return; 
     }*/
   }
+  // sync hidden row-indexed qty for posting
+  $("#item_qty_row_"+rowcount).val($("#item_qty_vis_"+rowcount).val());
 
   make_subtotal(item_id,rowcount);
 }
@@ -943,7 +988,7 @@ function make_subtotal(item_id,rowcount){
 
   var sales_price     =$("#sales_price_"+rowcount).val();
   //var gst_per         =$("#tr_item_per_"+rowcount).val();
-  var item_qty        =$("#item_qty_"+item_id).val();
+  var item_qty        =$("#item_qty_vis_"+rowcount).val();
 
   var tot_sales_price =parseFloat(item_qty)*parseFloat(sales_price);
   //var gst_amt=(tot_sales_price * gst_per)/100;
@@ -957,6 +1002,8 @@ function make_subtotal(item_id,rowcount){
   subtotal -= parseFloat(discount_amt);
   
   $("#td_data_"+rowcount+"_4").val(to_Fixed(subtotal));
+  // keep hidden row-indexed qty synced
+  $("#item_qty_row_"+rowcount).val($("#item_qty_vis_"+rowcount).val());
   final_total();
 }
 
@@ -989,11 +1036,10 @@ function final_total(){
       item_id=$("#tr_item_id_"+i).val();
       
       total=parseFloat(total)+parseFloat($("#td_data_"+i+"_4").val());
-      //console.log("==>total="+total);
-      //console.log("==>tax_amt="+tax_amt);
-     // total+=tax_amt;
-      //console.log("==>total="+total);
-      item_qty=parseFloat(item_qty)+parseFloat($("#item_qty_"+item_id).val());
+      // Sum quantity using row-indexed hidden field to avoid duplicate ids across rows
+      var row_qty = parseFloat($("#item_qty_row_"+i).val());
+      row_qty = isNaN(row_qty) ? 0 : row_qty;
+      item_qty = parseFloat(item_qty) + row_qty;
       item_qty = format_qty(item_qty);
       }
     }//for end
@@ -1036,7 +1082,7 @@ function adjust_payments(){
       total=parseFloat(total)+parseFloat($("#td_data_"+i+"_4").val());
       item_id=$("#tr_item_id_"+i).val();
 
-      row_wise_item_qty = get_float_type_data("#item_qty_"+item_id);
+      row_wise_item_qty = get_float_type_data("#item_qty_row_"+i);
 
       item_qty+=row_wise_item_qty;
 
@@ -1096,18 +1142,7 @@ $(document).ready(function(){
   get_coupon_details();
 });
 function check_same_item(item_id){
-
-  if($(".items_table tr").length>1){
-    var rowcount=$("#hidden_rowcount").val();
-    for(i=0;i<=rowcount;i++){
-            if($("#tr_item_id_"+i).val()==item_id){
-              increment_qty(item_id,i);
-              failed.currentTime = 0;
-              failed.play();
-              return false;
-            }
-      }//end for
-  }
+  // Allow multiple rows per item; batch combination duplicates are handled elsewhere
   return true;
 }
 
@@ -1205,10 +1240,16 @@ $(document).ready(function(){
         $('#warehouse_id').val(result[5]);
       }
 
-      //$('#customer_id').val(result[3]).select2();
-      //$("#customer_id").trigger("change");
-      
-      
+      // Initialize batch selects for each row (edit mode)
+      $("#pos-form-tbody tr").each(function(){
+        var $tr = $(this);
+        var rowId = parseInt(($tr.attr('id')||'').replace('row_',''));
+        var itemId = parseInt($tr.attr('data-item-id'));
+        if(!isNaN(rowId) && !isNaN(itemId)){
+          populate_batches_for_row(rowId, itemId);
+        }
+      });
+
       $("#hidden_rowcount").val(parseInt($(".items_table tr").length)-1);
       final_total();
       get_details();
@@ -1312,7 +1353,8 @@ $('#order_date,#delivery_date,#cheque_date').datepicker({
       var tax_type = $("#tr_tax_type_"+row_id).val();
       var tax = $("#tr_tax_value_"+row_id).val(); //%
       var item_id=$("#tr_item_id_"+row_id).val();
-      var qty=($("#item_qty_"+item_id).val());
+      // Use row-specific visible qty to avoid conflicts across multiple rows of the same item
+      var qty=($("#item_qty_vis_"+row_id).val());
           qty = (isNaN(qty)) ? 0 :qty;
 
       var sales_price = parseFloat($("#sales_price_"+row_id).val());

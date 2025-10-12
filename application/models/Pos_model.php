@@ -334,7 +334,7 @@ class Pos_model extends CI_Model {
 				//RECEIVE VALUES FROM FORM
 				$item_id 	=$this->xss_html_filter(trim($_REQUEST['tr_item_id_'.$i]));
 				$batch_id 	= isset($_REQUEST['tr_batch_id_'.$i.'_111']) ? $this->xss_html_filter(trim($_REQUEST['tr_batch_id_'.$i.'_111'])) : null;
-				$sales_qty 	=$this->xss_html_filter(trim($_REQUEST['item_qty_'.$item_id]));
+$sales_qty 	=$this->xss_html_filter(trim($_REQUEST['item_qty_'.$i]));
 				$price_per_unit =$this->xss_html_filter(trim($_REQUEST['sales_price_'.$i]));
 				$tax_amt =$this->xss_html_filter(trim($_REQUEST['td_data_'.$i.'_11']));
 				$tax_type =$this->xss_html_filter(trim($_REQUEST['tr_tax_type_'.$i]));
@@ -736,16 +736,23 @@ class Pos_model extends CI_Model {
 				$tax_id = $res3->tax_id;
 				$tax_value = $q6->tax;
 
-		  		$quantity        ='<div class="input-group input-group-sm"><span class="input-group-btn"><button onclick="decrement_qty('.$res3->item_id.','.$i.')" type="button" class="btn btn-default btn-flat"><i class="fa fa-minus text-danger"></i></button></span>';
-			    $quantity       .='<input typ="text" value="'.format_qty($res3->sales_qty).'" class="form-control min_width" onkeyup="item_qty_input('.$res3->item_id.','.$i.')" id="item_qty_'.$res3->item_id.'" name="item_qty_'.$res3->item_id.'">';
+$quantity        ='<div class="input-group input-group-sm"><span class="input-group-btn"><button onclick="decrement_qty('.$res3->item_id.','.$i.')" type="button" class="btn btn-default btn-flat"><i class="fa fa-minus text-danger"></i></button></span>';
+$quantity       .='<input typ="text" value="'.format_qty($res3->sales_qty).'" class="form-control min_width" onkeyup="item_qty_input('.$res3->item_id.','.$i.')" id="item_qty_vis_'.$i.'" name="item_qty_'.$res3->item_id.'">';
 			    $quantity       .='<span class="input-group-btn"><button onclick="increment_qty('.$res3->item_id.','.$i.')" type="button" class="btn btn-default btn-flat"><i class="fa fa-plus text-success"></i></button></span></div>';
+			    $quantity       .='<input type="hidden" id="item_qty_row_'.$i.'" name="item_qty_'.$i.'" value="'.format_qty($res3->sales_qty).'">';
 			    $sub_total       =$res3->total_cost;
 			    $remove_btn      ='<a class="fa fa-fw fa-trash-o text-red" style="cursor: pointer;font-size: 20px;" onclick="removerow('.$i.')" title="Delete Item?"></a>';
 			    
 		  		echo '<tr id="row_'.$i.'" data-row="0" data-item-id="'.$res3->item_id.'" >'; /*item id */
-		  		echo '<td id="td_'.$i.'_0">
+echo '<td id="td_'.$i.'_0">
 		  		<a data-toggle="tooltip" title="Click to Change Tax" class="pointer" id="td_data_'.$i.'_0" onclick="show_sales_item_modal('.$i.')">'.$q5->row()->item_name.'</a>
 		  		</td>';  /*td_0_0 item name*/
+		  		echo '<td id="td_'.$i.'_111">'.
+		  		     '<select onchange="batch_change(this,'.$i.','.$res3->item_id.')" id="tr_batch_id_'.$i.'_111" name="tr_batch_id_'.$i.'_111" class="form-control no-padding batchListing">'.
+		  		     '<option value="">Choose</option>'.
+		  		     '</select>'.
+		  		     '<input type="hidden" id="tr_batch_id_'.$i.'_saved" value="'.(isset($res3->batch_id)?$res3->batch_id:'').'">'.
+		  		     '</td>';
 		  		echo '<td id="td_'.$i.'_1">'.$stock.'</td>';  /*td_0_1 item available qty*/
 		  		echo '<td id="td_'.$i.'_2">'.$quantity.'</td>';    /*td_0_2 item available qty */
 
@@ -881,7 +888,7 @@ class Pos_model extends CI_Model {
 				$tax_value = $q6->tax;
 
 		  		$quantity        ='<div class="input-group input-group-sm"><span class="input-group-btn"><button onclick="decrement_qty('.$res3->item_id.','.$i.')" type="button" class="btn btn-default btn-flat"><i class="fa fa-minus text-danger"></i></button></span>';
-			    $quantity       .='<input typ="text" value="'.$res3->sales_qty.'" class="form-control min_width" onkeyup="item_qty_input('.$res3->item_id.','.$i.')" id="item_qty_'.$res3->item_id.'" name="item_qty_'.$res3->item_id.'">';
+$quantity       .='<input typ="text" value="'.$res3->sales_qty.'" class="form-control min_width" onkeyup="item_qty_input('.$res3->item_id.','.$i.')" id="item_qty_vis_'.$i.'" name="item_qty_'.$res3->item_id.'">';
 			    $quantity       .='<span class="input-group-btn"><button onclick="increment_qty('.$res3->item_id.','.$i.')" type="button" class="btn btn-default btn-flat"><i class="fa fa-plus text-success"></i></button></span></div>';
 			    $sub_total       =$res3->total_cost;
 			    $remove_btn      ='<a class="fa fa-fw fa-trash-o text-red" style="cursor: pointer;font-size: 20px;" onclick="removerow('.$i.')" title="Delete Item?"></a>';

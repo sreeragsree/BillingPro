@@ -127,3 +127,31 @@ AND `qty` > 0
 ORDER BY `expire_date` ASC
 ERROR - 2025-10-12 01:50:27 --> Severity: error --> Exception: Call to a member function result_array() on bool C:\xampp\htdocs\BILLING\application\models\Pos_model.php 29
 ERROR - 2025-10-12 02:22:42 --> Could not find the language line "company_address"
+ERROR - 2025-10-12 15:33:51 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-12 19:04:23 --> Could not find the language line "close"
+ERROR - 2025-10-12 15:34:23 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-12 15:34:24 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-12 15:34:34 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-12 15:34:34 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-12 15:49:41 --> 404 Page Not Found: Uploads/site
+ERROR - 2025-10-12 15:50:51 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 19:25:36 --> Could not find the language line "close"
+ERROR - 2025-10-12 15:55:37 --> 404 Page Not Found: Theme/bower_components
+ERROR - 2025-10-12 15:55:37 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-12 15:55:45 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-12 15:55:45 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-10-12 17:10:16 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 17:20:12 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 17:21:36 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 17:30:37 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 17:33:28 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 17:59:27 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 18:04:41 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 18:34:38 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 18:39:56 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 18:56:47 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 19:01:10 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 19:01:59 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 19:05:39 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 19:22:14 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-10-12 19:34:52 --> 404 Page Not Found: Theme/plugins
