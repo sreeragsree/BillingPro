@@ -663,88 +663,161 @@ function addrow(id='',item_obj=''){
     //CHECK SAME ITEM ALREADY EXIST IN ITEMS TABLE 
     var item_check=check_same_item(item_id);
     if(!item_check){return false;}
-    var rowcount        =$("#hidden_rowcount").val();//0,1,2...
-    var item_name = (item_obj=='') ? $('#div_'+id).attr('data-item-name') : item_obj.item_name; 
 
-    var stock   =(item_obj=='') ? $('#div_'+id).attr('data-item-available-qty') : item_obj.stock;
-        stock     =(parseFloat(stock)).toFixed(2);
-
-    var tax_type   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-type') : item_obj.tax_type;  
-    var tax_id   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-id') : item_obj.tax_id;  
-    var tax_value   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-value') : item_obj.tax;
-    
-    var tax_name   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-name'):item_obj.tax_name;  
-    var tax_amt   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-amt') : item_obj.item_tax_amt; 
-    //var purchase_price   =(item_obj=='') ? $('#div_'+id).attr('data-purchase_price') : item_obj.purchase_price; 
-    var discount_type   =(item_obj=='') ? $('#div_'+id).attr('data-discount_type') :item_obj.discount_type; 
-    var discount   =(item_obj=='') ? $('#div_'+id).attr('data-discount') : item_obj.discount; 
- 
-    
+    // Determine service bit early for stock/batch checks
     var service_bit   =(item_obj=='') ? $('#div_'+id).attr('data-service_bit') : item_obj.service_bit; 
-    //var gst_per         =$('#div_'+id).attr('data-item-tax-per');
-    //var gst_amt         =$('#div_'+id).attr('data-item-gst-amt');
+        service_bit = parseInt(service_bit);
 
-    var item_cost     =(item_obj=='') ? $('#div_'+id).attr('data-item-cost') : item_obj.purchase_price;  
-    var sales_price     =(item_obj=='') ? $('#div_'+id).attr('data-item-sales-price') : item_obj.sales_price ; 
-    var sales_price_temp=sales_price;
-        sales_price     =to_Fixed(sales_price);
+    var proceedAppend = function(batchesData){
+      var rowcount        =$("#hidden_rowcount").val();//0,1,2...
+      var item_name = (item_obj=='') ? $('#div_'+id).attr('data-item-name') : item_obj.item_name; 
 
-    var quantity        ='<div class="input-group input-group-sm"><span class="input-group-btn"><button onclick="decrement_qty('+item_id+','+rowcount+')" type="button" class="btn btn-default btn-flat"><i class="fa fa-minus text-danger"></i></button></span>';
-        quantity       +='<input typ="text" value="'+format_qty(1)+'" class="form-control no-padding text-center min_width" onchange="item_qty_input('+item_id+','+rowcount+')" id="item_qty_vis_'+rowcount+'" name="item_qty_'+item_id+'">';
-        quantity       +='<span class="input-group-btn"><button onclick="increment_qty('+item_id+','+rowcount+')" type="button" class="btn btn-default btn-flat"><i class="fa fa-plus text-success"></i></button></span></div>';
-    var hiddenQty      = '<input type="hidden" id="item_qty_row_'+rowcount+'" name="item_qty_'+rowcount+'" value="'+format_qty(1)+'">';
-    var sub_total       =(to_Fixed(1)*to_Fixed(sales_price));//Initial
-    var remove_btn      ='<a class="fa fa-fw fa-trash-o text-red" style="cursor: pointer;font-size: 20px;" onclick="removerow('+rowcount+')" title="Delete Item?"></a>';
+      var stock   =(item_obj=='') ? $('#div_'+id).attr('data-item-available-qty') : item_obj.stock;
+          stock     =(parseFloat(stock)).toFixed(2);
 
-    var str=' <tr id="row_'+rowcount+'" data-row="0" data-item-id='+item_id+'>';/*item id*/
-        str+='<td id="td_'+rowcount+'_0"><a data-toggle="tooltip" title="Click to Change Tax" class="pointer" id="td_data_'+rowcount+'_0" onclick="show_sales_item_modal('+rowcount+')">'+ item_name     +'</a> <i onclick="show_sales_item_modal('+rowcount+')" class="fa fa-edit pointer"></i></td>';/* td_0_0 item name*/ 
-        // Batch dropdown column inserted after item name
-        str+='<td id="td_'+rowcount+'_111">'+
-             '<select onchange="batch_change(this,'+rowcount+','+item_id+')" id="tr_batch_id_'+rowcount+'_111" name="tr_batch_id_'+rowcount+'_111" class="form-control no-padding batchListing">'+
-             '<option value="">Choose</option>'+
-             '</select>'+
-             '<input type="hidden" id="tr_batch_id_'+rowcount+'_saved" value="">'+
-             '</td>';
-        str+='<td id="td_'+rowcount+'_1">'+ stock +'</td>';/* td_0_1 item available qty*/
-        str+='<td id="td_'+rowcount+'_2">'+ quantity + hiddenQty +'</td>';/* td_0_2 item available qty*/
-            info='<input id="sales_price_'+rowcount+'" onblur="set_to_original('+rowcount+','+item_cost+')" onkeyup="update_price('+rowcount+','+item_cost+')" name="sales_price_'+rowcount+'" type="text" class="form-control no-padding min_width" value="'+sales_price+'">';
-        str+='<td id="td_'+rowcount+'_3" class="text-right">'+ info   +'</td>';/* td_0_3 item sales price*/
+      var tax_type   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-type') : item_obj.tax_type;  
+      var tax_id   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-id') : item_obj.tax_id;  
+      var tax_value   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-value') : item_obj.tax;
+      
+      var tax_name   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-name'):item_obj.tax_name;  
+      var tax_amt   =(item_obj=='') ? $('#div_'+id).attr('data-item-tax-amt') : item_obj.item_tax_amt; 
+      //var purchase_price   =(item_obj=='') ? $('#div_'+id).attr('data-purchase_price') : item_obj.purchase_price; 
+      var discount_type   =(item_obj=='') ? $('#div_'+id).attr('data-discount_type') :item_obj.discount_type; 
+      var discount   =(item_obj=='') ? $('#div_'+id).attr('data-discount') : item_obj.discount; 
+     
+      //var gst_per         =$('#div_'+id).attr('data-item-tax-per');
+      //var gst_amt         =$('#div_'+id).attr('data-item-gst-amt');
 
-        /*Discount*/
-         info='<input data-toggle="tooltip" title="Click to Change" onclick="show_sales_item_modal('+rowcount+')" id="item_discount_'+rowcount+'" readonly name="item_discount_'+rowcount+'" type="text" class="form-control no-padding min_width pointer" value="0">';
-         
-        str+='<td id="td_'+rowcount+'_6" class="text-right">'+ info   +'</td>';
+      var item_cost     =(item_obj=='') ? $('#div_'+id).attr('data-item-cost') : item_obj.purchase_price;  
+      var sales_price     =(item_obj=='') ? $('#div_'+id).attr('data-item-sales-price') : item_obj.sales_price ; 
+      var sales_price_temp=sales_price;
+          sales_price     =to_Fixed(sales_price);
 
-        /*Tax amt*/
-        str+='<td id="td_'+rowcount+'_11"><input data-toggle="tooltip" title="Click to Change" id="td_data_'+rowcount+'_11" onclick="show_sales_item_modal('+rowcount+')" name="td_data_'+rowcount+'_11" type="text" class="form-control no-padding pointer min_width" readonly value="'+tax_amt+'"></td>';
+      var quantity        ='<div class="input-group input-group-sm"><span class="input-group-btn"><button onclick="decrement_qty('+item_id+','+rowcount+')" type="button" class="btn btn-default btn-flat"><i class="fa fa-minus text-danger"></i></button></span>';
+          quantity       +='<input type="text" value="'+format_qty(1)+'" class="form-control no-padding text-center min_width" onchange="item_qty_input('+item_id+','+rowcount+')" id="item_qty_vis_'+rowcount+'" name="item_qty_vis_'+rowcount+'">';
+          quantity       +='<span class="input-group-btn"><button onclick="increment_qty('+item_id+','+rowcount+')" type="button" class="btn btn-default btn-flat"><i class="fa fa-plus text-success"></i></button></span></div>';
+      var hiddenQty      = '<input type="hidden" id="item_qty_row_'+rowcount+'" name="item_qty_'+rowcount+'" value="'+format_qty(1)+'">';
+      var sub_total       =(to_Fixed(1)*to_Fixed(sales_price));//Initial
+      var remove_btn      ='<a class="fa fa-fw fa-trash-o text-red" style="cursor: pointer;font-size: 20px;" onclick="removerow('+rowcount+')" title="Delete Item?"></a>';
 
-        str+='<td id="td_'+rowcount+'_4" class="text-right"><input data-toggle="tooltip" title="Total" id="td_data_'+rowcount+'_4" name="td_data_'+rowcount+'_4" type="text" class="form-control no-padding pointer" readonly value="'+sub_total+'"></td>';/* td_0_4 item sub_total */
-        str+='<td id="td_'+rowcount+'_5">'+ remove_btn    +'</td>';/* td_0_5 item gst_amt */
+      var str=' <tr id="row_'+rowcount+'" data-row="0" data-item-id='+item_id+'>';/*item id*/
+          str+='<td id="td_'+rowcount+'_0"><a data-toggle="tooltip" title="Click to Change Tax" class="pointer" id="td_data_'+rowcount+'_0" onclick="show_sales_item_modal('+rowcount+')">'+ item_name     +'</a> <i onclick="show_sales_item_modal('+rowcount+')" class="fa fa-edit pointer"></i></td>';/* td_0_0 item name*/ 
+          // Batch dropdown column inserted after item name
+          str+='<td id="td_'+rowcount+'_111">'+
+               '<select onchange="batch_change(this,'+rowcount+','+item_id+')" id="tr_batch_id_'+rowcount+'_111" name="tr_batch_id_'+rowcount+'_111" class="form-control no-padding batchListing">'+
+               '<option value="">Choose</option>'+
+               '</select>'+
+               '<input type="hidden" id="tr_batch_id_'+rowcount+'_saved" value="">'+
+               '</td>';
+          str+='<td id="td_'+rowcount+'_1">'+ stock +'</td>';/* td_0_1 item available qty*/
+          str+='<td id="td_'+rowcount+'_2">'+ quantity + hiddenQty +'</td>';/* td_0_2 item available qty*/
+              info='<input id="sales_price_'+rowcount+'" onblur="set_to_original('+rowcount+','+item_cost+')" onkeyup="update_price('+rowcount+','+item_cost+')" name="sales_price_'+rowcount+'" type="text" class="form-control no-padding min_width" value="'+sales_price+'">';
+          str+='<td id="td_'+rowcount+'_3" class="text-right">'+ info   +'</td>';/* td_0_3 item sales price*/
 
-        str+='<input type="hidden" name="tr_item_id_'+rowcount+'" id="tr_item_id_'+rowcount+'" value="'+item_id+'">';
-       // str+='<input type="hidden" id="tr_item_per_'+rowcount+'" name="tr_item_per_'+rowcount+'" value="'+gst_per+'">';
-        str+='<input type="hidden" id="tr_sales_price_temp_'+rowcount+'" name="tr_sales_price_temp_'+rowcount+'" value="'+sales_price_temp+'">';
-        str+='<input type="hidden" id="tr_tax_type_'+rowcount+'" name="tr_tax_type_'+rowcount+'" value="'+tax_type+'">';
-        str+='<input type="hidden" id="tr_tax_id_'+rowcount+'" name="tr_tax_id_'+rowcount+'" value="'+tax_id+'">';
-        str+='<input type="hidden" id="tr_tax_value_'+rowcount+'" name="tr_tax_value_'+rowcount+'" value="'+tax_value+'">';
-        str+='<input type="hidden" id="description_'+rowcount+'" name="description_'+rowcount+'" value="">';
-        str+='<input type="hidden" id="service_bit_'+rowcount+'" name="service_bit_'+rowcount+'" value="'+service_bit+'">';
-        str+='<input id="item_discount_type_'+rowcount+'" name="item_discount_type_'+rowcount+'" type="hidden" value="'+discount_type+'">';
-         str+='<input id="item_discount_input_'+rowcount+'" name="item_discount_input_'+rowcount+'" type="hidden" value="'+discount+'">';
-        str+='</tr>';   
+          /*Discount*/
+           info='<input data-toggle="tooltip" title="Click to Change" onclick="show_sales_item_modal('+rowcount+')" id="item_discount_'+rowcount+'" readonly name="item_discount_'+rowcount+'" type="text" class="form-control no-padding min_width pointer" value="0">';
+           
+          str+='<td id="td_'+rowcount+'_6" class="text-right">'+ info   +'</td>';
 
-    //LEFT SIDE: ADD OR APPEND TO SALES INVOICE TERMINAL
-    $('#pos-form-tbody').append(str);
+          /*Tax amt*/
+          str+='<td id="td_'+rowcount+'_11"><input data-toggle="tooltip" title="Click to Change" id="td_data_'+rowcount+'_11" onclick="show_sales_item_modal('+rowcount+')" name="td_data_'+rowcount+'_11" type="text" class="form-control no-padding pointer min_width" readonly value="'+tax_amt+'"></td>';
 
-    // Populate batch options for this row
-    populate_batches_for_row(rowcount, item_id);
+          str+='<td id="td_'+rowcount+'_4" class="text-right"><input data-toggle="tooltip" title="Total" id="td_data_'+rowcount+'_4" name="td_data_'+rowcount+'_4" type="text" class="form-control no-padding pointer" readonly value="'+sub_total+'"></td>';/* td_0_4 item sub_total */
+          str+='<td id="td_'+rowcount+'_5">'+ remove_btn    +'</td>';/* td_0_5 item gst_amt */
 
-    //LEFT SIDE: INCREMANT ROW COUNT
-    $("#hidden_rowcount").val(parseFloat($("#hidden_rowcount").val())+1);
-    failed.currentTime = 0;
-    failed.play();
-    //CALCULATE FINAL TOTAL AND OTHER OPERATIONS
-    make_subtotal(item_id,rowcount);
+          str+='<input type="hidden" name="tr_item_id_'+rowcount+'" id="tr_item_id_'+rowcount+'" value="'+item_id+'">';
+         // str+='<input type="hidden" id="tr_item_per_'+rowcount+'" name="tr_item_per_'+rowcount+'" value="'+gst_per+'">';
+          str+='<input type="hidden" id="tr_sales_price_temp_'+rowcount+'" name="tr_sales_price_temp_'+rowcount+'" value="'+sales_price_temp+'">';
+          str+='<input type="hidden" id="tr_tax_type_'+rowcount+'" name="tr_tax_type_'+rowcount+'" value="'+tax_type+'">';
+          str+='<input type="hidden" id="tr_tax_id_'+rowcount+'" name="tr_tax_id_'+rowcount+'" value="'+tax_id+'">';
+          str+='<input type="hidden" id="tr_tax_value_'+rowcount+'" name="tr_tax_value_'+rowcount+'" value="'+tax_value+'">';
+          str+='<input type="hidden" id="description_'+rowcount+'" name="description_'+rowcount+'" value="">';
+          str+='<input type="hidden" id="service_bit_'+rowcount+'" name="service_bit_'+rowcount+'" value="'+service_bit+'">';
+          str+='<input id="item_discount_type_'+rowcount+'" name="item_discount_type_'+rowcount+'" type="hidden" value="'+discount_type+'">';
+           str+='<input id="item_discount_input_'+rowcount+'" name="item_discount_input_'+rowcount+'" type="hidden" value="'+discount+'">';
+          str+='</tr>';   
+
+      //LEFT SIDE: ADD OR APPEND TO SALES INVOICE TERMINAL
+      $('#pos-form-tbody').append(str);
+
+      // If batch list is provided, populate immediately and force a selection
+      if(Array.isArray(batchesData)){
+        var $sel = $("#tr_batch_id_"+rowcount+"_111");
+        $sel.empty();
+        $sel.append('<option value="">Choose</option>');
+        batchesData.forEach(function(b){
+          var sp = isNaN(parseFloat(b.sales_price)) ? b.sales_price : parseFloat(b.sales_price).toFixed(4);
+          var ap = (b.alphabet_price || '').toString().trim();
+          var label = sp + ' - ' + ap;
+          $sel.append('<option value="'+b.id+'">'+label+'</option>');
+        });
+        // prefer selecting a batch already used for this item (to merge qty), else first available
+        var used = new Set();
+        document.querySelectorAll("#pos-form-tbody tr").forEach(function(tr){
+          var itemIdEl = tr.querySelector("[id^='tr_item_id_']");
+          var batchSel = tr.querySelector("[id^='tr_batch_id_']");
+          if(!itemIdEl || !batchSel) return;
+          var itemId = (itemIdEl.value||'').trim();
+          var batchId = (batchSel.value||'').trim();
+          if(itemId && batchId && parseInt(itemId,10) === parseInt(item_id,10)){
+            used.add(batchId);
+          }
+        });
+        var selectedId = null;
+        var multiple = batchesData.length > 1;
+        if(multiple){
+          // prefer first unused batch to create a new row (avoid auto-merge)
+          for(var i=0;i<batchesData.length;i++){
+            var cand = String(batchesData[i].id);
+            if(!used.has(cand)) { selectedId = cand; break; }
+          }
+        }
+        // if single batch or all used, pick the first available
+        if(!selectedId && batchesData.length>0){
+          selectedId = String(batchesData[0].id);
+        }
+        if(selectedId){
+          $sel.val(selectedId).trigger('change');
+        }else{
+          // cannot select a valid batch -> remove row silently
+          $("#row_"+rowcount).remove();
+          return;
+        }
+      }
+
+      //LEFT SIDE: INCREMENT ROW COUNT
+      var currentRowCount = parseInt($("#hidden_rowcount").val()) || 0;
+      $("#hidden_rowcount").val(currentRowCount + 1);
+      failed.currentTime = 0;
+      failed.play();
+      //CALCULATE FINAL TOTAL AND OTHER OPERATIONS
+      make_subtotal(item_id,rowcount);
+    };
+
+    // For non-service items: require at least one in-stock batch; then append and force selection
+    if(service_bit!==1){
+      var base_url=$("#base_url").val();
+      $.get(base_url+"pos/get_batches_by_product", { pro_id: item_id }, function(listResult){
+        try{
+          var data = JSON.parse(listResult);
+          if(!Array.isArray(data)){ data = []; }
+          if(data.length===0){
+            toastr["error"]("No stock");
+            failed.currentTime = 0; failed.play();
+            return;
+          }
+          proceedAppend(data);
+        }catch(e){
+          toastr["error"]("No stock");
+          failed.currentTime = 0; failed.play();
+        }
+      }).fail(function(){
+        toastr["error"]("No stock");
+        failed.currentTime = 0; failed.play();
+      });
+    }else{
+      proceedAppend();
+    }
   }
 
 // Fetch batch list for an item and populate select
@@ -801,22 +874,36 @@ function populate_batches_for_row(row_id, pro_id){
 
 function batch_change(selectElement, row_id, pro_id) {
   var selectedValue = selectElement.value;
-  // Only check duplicates when a concrete batch is selected
+  var $saved = $("#tr_batch_id_"+row_id+"_saved");
+  // If selecting a batch that already exists on another row for same item, we'll merge quantities instead of blocking
+  var duplicateRowId = null;
   if(selectedValue){
-    if(!checkForDuplicates()){
-      toastr["warning"]("Duplicate item+batch detected. Please choose a different batch.");
-      // revert this selection
-      $(selectElement).val("");
-      return;
-    }
+    $("#pos-form-tbody tr").each(function(){
+      var $tr = $(this);
+      var rid = parseInt(($tr.attr('id')||'').replace('row_',''));
+      if(rid===row_id) return;
+      var itemIdEl = $tr.find("[id^='tr_item_id_']");
+      var batchSel = $tr.find("[id^='tr_batch_id_']");
+      if(itemIdEl.length && batchSel.length){
+        var itemId = (itemIdEl.val()||'').trim();
+        var batchId = (batchSel.val()||'').trim();
+        if(itemId && batchId && parseInt(itemId,10)===parseInt(pro_id,10) && batchId===selectedValue){
+          duplicateRowId = rid;
+          return false; // break
+        }
+      }
+    });
   }
   if(!selectedValue){
-    $("#sales_price_"+row_id).val(0);
-    $("#td_data_"+row_id+"_11").val(0);
-    $("#td_data_"+row_id+"_4").val(0);
-    make_subtotal($("#tr_item_id_"+row_id).val(), row_id);
+    // prevent blank selection; revert to previous value if available, else keep as is silently
+    var prev = ($saved.val()||'');
+    if(prev){
+      $(selectElement).val(prev);
+    }
     return;
   }
+  // persist the last valid selection
+  $saved.val(selectedValue);
   var base_url=$("#base_url").val();
   $.get(base_url + "purchase/get_item_details_with_batch_and_productid", {
       pro_id: pro_id,
@@ -825,6 +912,32 @@ function batch_change(selectElement, row_id, pro_id) {
       try{
         var jsonData = JSON.parse(result);
         if(!jsonData || jsonData.error){
+          return;
+        }
+        // Verify stock of selected batch
+        var batchQty = parseFloat(jsonData.quantity);
+            batchQty = isNaN(batchQty) ? 0 : batchQty;
+        if(batchQty <= 0){
+          toastr["error"]("No stock");
+          var prev = ($saved.val()||'');
+          if(prev){ $(selectElement).val(prev); }
+          else { $(selectElement).val(""); $("#row_"+row_id).remove(); }
+          return;
+        }
+        // If another row with same item+batch exists, merge quantities there and remove this row
+        if(duplicateRowId!==null){
+          var $exQty = $("#item_qty_vis_"+duplicateRowId);
+          var exCurr = parseFloat($exQty.val()); exCurr = isNaN(exCurr)?0:exCurr;
+          var addQty = parseFloat($("#item_qty_vis_"+row_id).val()); addQty = isNaN(addQty)?1:addQty;
+          var newQty = exCurr + addQty;
+          var clamped = Math.min(newQty, batchQty);
+          
+          // First remove the row that will be merged
+          $("#row_"+row_id).remove();
+          
+          // Then update the quantity and recalculate
+          $exQty.val(format_qty(clamped));
+          make_subtotal($("#tr_item_id_"+duplicateRowId).val(), duplicateRowId);
           return;
         }
         $("#td_"+row_id+"_1").text(jsonData.quantity);
@@ -836,8 +949,7 @@ function batch_change(selectElement, row_id, pro_id) {
         var $qty = $("#item_qty_vis_"+row_id);
         var currQty = parseFloat($qty.val());
             currQty = isNaN(currQty) ? 0 : currQty;
-        var stock = parseFloat(jsonData.quantity);
-            stock = isNaN(stock) ? 0 : stock;
+        var stock = batchQty;
         if(currQty > stock){
           $qty.val(format_qty(stock));
         }
@@ -983,23 +1095,25 @@ function make_subtotal(item_id,rowcount){
   set_tax_value(rowcount);
 
    //Find the Tax type and Tax amount
-   var tax_type = $("#tr_tax_type_"+rowcount).val();
-   var tax_amount = $("#td_data_"+rowcount+"_11").val();
+   var tax_type = $("#tr_tax_type_"+rowcount).val() || 'Exclusive';
+   var tax_amount = parseFloat($("#td_data_"+rowcount+"_11").val()) || 0;
 
-  var sales_price     =$("#sales_price_"+rowcount).val();
-  //var gst_per         =$("#tr_item_per_"+rowcount).val();
-  var item_qty        =$("#item_qty_vis_"+rowcount).val();
+  var sales_price = parseFloat($("#sales_price_"+rowcount).val()) || 0;
+  var item_qty = parseFloat($("#item_qty_vis_"+rowcount).val()) || 0;
 
-  var tot_sales_price =parseFloat(item_qty)*parseFloat(sales_price);
-  //var gst_amt=(tot_sales_price * gst_per)/100;
+  var tot_sales_price = item_qty * sales_price;
+  var subtotal = tot_sales_price;
+  
+  /*Discount*/
+  var discount_amt = parseFloat($("#item_discount_"+rowcount).val()) || 0;
 
-  var subtotal        =parseFloat(tot_sales_price);
-  /*Discounr*/
-  var discount_amt    =$("#item_discount_"+rowcount).val();
-
-  subtotal = (tax_type=='Inclusive') ? subtotal : parseFloat(subtotal) + parseFloat(tax_amount);
-
-  subtotal -= parseFloat(discount_amt);
+  subtotal = (tax_type=='Inclusive') ? subtotal : subtotal + tax_amount;
+  subtotal -= discount_amt;
+  
+  // Ensure subtotal is never NaN
+  if(isNaN(subtotal)) {
+    subtotal = 0;
+  }
   
   $("#td_data_"+rowcount+"_4").val(to_Fixed(subtotal));
   // keep hidden row-indexed qty synced
@@ -1022,28 +1136,30 @@ function calulate_discount(discount_input,discount_type,total){
 function final_total(){
   var total=0;
   var item_qty=0;
-  var rowcount=$("#hidden_rowcount").val();
-  var discount_input=$("#discount_input").val();
-  var discount_type=$("#discount_type").val();
-  /*var other_charges=parseFloat($("#other_charges").val());
-      other_charges = (isNaN(other_charges)) ? parseFloat(0) :other_charges;*/
-
+  var rowcount=parseInt($("#hidden_rowcount").val()) || 0;
+  var discount_input=parseFloat($("#discount_input").val()) || 0;
+  var discount_type=$("#discount_type").val() || 'in_fixed';
+  
   if($(".items_table tr").length>1){
-    for(i=0;i<rowcount;i++){
-      if(document.getElementById('tr_item_id_'+i)){
-       // set_tax_value(i);
-      //var tax_amt = parseFloat($("#td_data_"+i+"_11").val());
-      item_id=$("#tr_item_id_"+i).val();
-      
-      total=parseFloat(total)+parseFloat($("#td_data_"+i+"_4").val());
-      // Sum quantity using row-indexed hidden field to avoid duplicate ids across rows
-      var row_qty = parseFloat($("#item_qty_row_"+i).val());
-      row_qty = isNaN(row_qty) ? 0 : row_qty;
-      item_qty = parseFloat(item_qty) + row_qty;
-      item_qty = format_qty(item_qty);
+    for(var i=0; i<rowcount; i++){
+      var item_id_element = document.getElementById('tr_item_id_'+i);
+      if(item_id_element){
+        var row_total_element = $("#td_data_"+i+"_4");
+        var row_qty_element = $("#item_qty_row_"+i);
+        
+        if(row_total_element.length && row_qty_element.length){
+          var row_total = parseFloat(row_total_element.val()) || 0;
+          var row_qty = parseFloat(row_qty_element.val()) || 0;
+          
+          total += row_total;
+          item_qty += row_qty;
+        }
       }
     }//for end
   }//items_table
+  
+  // Format quantity after all calculations are done
+  item_qty = format_qty(item_qty);
   
   //total+=other_charges;
   //total =round_off(total);

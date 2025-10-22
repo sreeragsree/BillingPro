@@ -1,4 +1,64 @@
-# Developer Notes: POS Invoice Updates (2025-10-11)
+# Developer Notes: POS Invoice Updates (2025-10-22)
+
+## Permission Management
+
+### Access Control
+- **Admin Level**: Full access to all features and settings
+- **Staff Level**: Limited access based on role permissions
+  - Can process sales and view reports
+  - Restricted from accessing sensitive system settings
+  - Limited access to financial data based on role configuration
+
+## Logo Implementation
+
+For adding a store logo to the POS invoice header, use the following HTML snippet:
+
+```html
+<tr>
+    <td align="center" width="40%" style="padding: 5px 0;">
+        <img src="<?= base_url($store_logo);?>" width="50%" height="auto" style="max-width: 200px;">
+    </td>
+</tr>
+```
+
+## QR Code Implementation
+
+For adding QR code to POS invoice, use the following HTML snippet:
+
+```html
+<div style="margin: 10px 0;">
+    <img src="<?= base_url('theme/dist/img/payQr.png') ?>" alt="QR Code" style="width: 90px; height: 90px; display: block; margin: 0 auto;">
+</div>
+```
+
+This code should be placed in the POS invoice template where you want the QR code to appear. The QR code is centered and has a fixed size of 90x90 pixels with some margin for better spacing.
+
+## POS: Fix for Duplicate Batch Total Calculation (2025-10-22)
+
+### Overview
+- Fixed an issue where adding the same item with different batches would cause incorrect grand total calculation when adding the same item again.
+- The problem occurred when merging quantities of duplicate item+batch combinations.
+
+### Key Changes
+1. **batch_change Function Update**:
+   - Modified the order of operations when merging duplicate item+batch rows
+   - Now removes the duplicate row from the DOM before updating quantities and recalculating totals
+   - Ensures the grand total is calculated correctly by preventing double-counting of the same item+batch
+
+2. **Behavior Before Fix**:
+   - When adding the same item with different batches, each would be added as a new row
+   - However, when adding the same item again, the grand total would incorrectly include the subtotal of the row being removed
+
+3. **Behavior After Fix**:
+   - Duplicate rows are now removed before updating quantities and recalculating totals
+   - Grand total is calculated correctly with no duplicate counting
+   - Maintains all existing functionality for batch handling and quantity management
+
+### Files Modified
+1. `application/views/pos.php`
+   - Updated `batch_change` function to handle DOM manipulation and total calculation in the correct order
+
+---
 
 ## POS: Multi-batch lines, per-row quantity/tax fixes, and default batch (2025-10-12)
 
@@ -474,3 +534,323 @@ application/views/sal-invoice-pos.php
 **Date**: Current Implementation
 **Version**: 1.0
 **Status**: Complete and Functional
+
+---
+
+## POS: Multiple Batch Quantity & Grand Total Fix (2025-10-22)
+
+### Issue Description
+When adding items with multiple batches in POS, there were errors in:
+1. **Grand Total Calculation**: Incorrect totaling due to quantity field naming conflicts
+2. **Quantity Display**: Wrong quantity aggregation when same item had multiple batch rows
+
+### Root Cause Analysis
+The problem was in the quantity field naming convention:
+- **Visible quantity input**: Originally named `item_qty_{item_id}` causing conflicts when same item appears in multiple rows with different batches
+- **Hidden quantity field**: Correctly named `item_qty_{row_index}` for backend processing
+- **JavaScript calculations**: Used row-based IDs but HTML structure had item-based naming conflicts
+
+### Files Modified
+
+#### 1. `application/views/pos.php`
+
+**Lines 696-699**: Fixed quantity input field naming
+```javascript
+// BEFORE (conflicting names)
+quantity +='<input type="text" ... name="item_qty_'+item_id+'">';
+
+// AFTER (row-based names)
+quantity +='<input type="text" ... name="item_qty_vis_'+rowcount+'">';
+```
+
+**Lines 788-791**: Fixed row count increment
+```javascript
+// BEFORE (using parseFloat)
+$("#hidden_rowcount").val(parseFloat($("#hidden_rowcount").val())+1);
+
+// AFTER (using parseInt with proper initialization)
+var currentRowCount = parseInt($("#hidden_rowcount").val()) || 0;
+$("#hidden_rowcount").val(currentRowCount + 1);
+```
+
+**Lines 1090-1116**: Enhanced `make_subtotal()` function
+- Added proper NaN handling for all numeric inputs
+- Improved variable initialization with fallback values
+- Added subtotal validation to prevent NaN results
+
+```javascript
+var tax_type = $("#tr_tax_type_"+rowcount).val() || 'Exclusive';
+var tax_amount = parseFloat($("#td_data_"+rowcount+"_11").val()) || 0;
+var sales_price = parseFloat($("#sales_price_"+rowcount).val()) || 0;
+var item_qty = parseFloat($("#item_qty_vis_"+rowcount).val()) || 0;
+var discount_amt = parseFloat($("#item_discount_"+rowcount).val()) || 0;
+
+// NaN prevention
+if(isNaN(subtotal)) { subtotal = 0; }
+```
+
+**Lines 1130-1162**: Enhanced `final_total()` function
+- Added proper NaN handling with `|| 0` operators
+- Improved quantity aggregation logic
+- Fixed parseInt/parseFloat usage for row counting
+- Enhanced error prevention in calculations
+- Improved element existence checking
+
+```javascript
+// Key improvements:
+var rowcount = parseInt($("#hidden_rowcount").val()) || 0;
+var discount_input = parseFloat($("#discount_input").val()) || 0;
+var discount_type = $("#discount_type").val() || 'in_fixed';
+
+// Safer element checking and total calculation
+for(var i=0; i<rowcount; i++){
+  var item_id_element = document.getElementById('tr_item_id_'+i);
+  if(item_id_element){
+    var row_total_element = $("#td_data_"+i+"_4");
+    var row_qty_element = $("#item_qty_row_"+i);
+    
+    if(row_total_element.length && row_qty_element.length){
+      var row_total = parseFloat(row_total_element.val()) || 0;
+      var row_qty = parseFloat(row_qty_element.val()) || 0;
+      total += row_total;
+      item_qty += row_qty;
+    }
+  }
+}
+```
+
+### Behavior After Fix
+
+1. **Multiple Batch Support**: Same item can be added multiple times, each row representing a different batch
+2. **Correct Quantity Tracking**: Each row maintains independent quantity that properly syncs between visible and hidden fields
+3. **Accurate Grand Total**: All calculations (subtotal, tax, discount, grand total) work correctly
+4. **Proper Form Submission**: Backend receives correctly named `item_qty_0`, `item_qty_1`, etc.
+
+### Technical Details
+
+#### Quantity Field Architecture
+- **Visible Input**: `item_qty_vis_{rowcount}` - User interface field
+- **Hidden Input**: `item_qty_{rowcount}` - Form submission field (matches backend expectation)
+- **Synchronization**: All increment/decrement/manual input functions sync both fields
+
+#### Backend Compatibility
+- `Pos_model.php` line 337: `$_REQUEST['item_qty_'.$i]` correctly matches our row-based naming
+- No backend changes required - the model was already expecting row-based quantities
+
+### Testing Verification
+- [ ] Add same item with different batches - each should be separate rows
+- [ ] Modify quantities independently for each batch row
+- [ ] Verify grand total updates correctly
+- [ ] Confirm form submission includes all quantities
+- [ ] Test increment/decrement buttons work for each row
+- [ ] Validate manual quantity input synchronization
+
+### Impact
+- ✅ **Fixed**: Grand total calculation errors
+- ✅ **Fixed**: Quantity aggregation conflicts
+- ✅ **Enhanced**: Error handling and NaN prevention
+- ✅ **Maintained**: All existing functionality for single batch items
+- ✅ **Improved**: Multi-batch inventory management
+
+---
+
+# Project Overview
+
+## System Architecture
+
+**Framework**: CodeIgniter 3.x PHP Framework  
+**Database**: MySQL/MariaDB  
+**Frontend**: Bootstrap, jQuery, AdminLTE  
+**Environment**: XAMPP (Windows Development)
+
+### Key Dependencies (composer.json)
+- **Twilio SDK** (v6.16+): SMS/communication services
+- **Laminas Barcode** (v2.11+): Barcode generation
+- **DomPDF** (v2.0+): PDF generation for invoices
+- **chillerlan/php-qrcode** (v4.3+): QR code generation
+
+## Directory Structure
+
+```
+BILLING/
+├── application/          # Main CodeIgniter application
+│   ├── controllers/      # Business logic controllers
+│   ├── models/           # Database interaction models
+│   ├── views/            # UI templates and views
+│   ├── config/           # Configuration files
+│   └── logs/             # Application logs
+├── system/               # CodeIgniter framework core
+├── theme/                # UI assets (CSS, JS, images)
+├── uploads/              # File uploads directory
+├── dbbackup/             # Database backups
+├── setup/                # Installation scripts
+└── help/                 # Documentation files
+```
+
+## Core Modules
+
+### 1. **Inventory Management**
+- Item master data with categories, brands, units
+- Batch-wise stock tracking
+- Supplier management
+- Purchase order processing
+
+### 2. **Sales & Billing**
+- POS (Point of Sale) interface
+- Sales invoice generation
+- Multiple payment methods support
+- Real-time stock updates
+
+### 3. **Reporting**
+- Sales reports
+- Stock reports
+- Financial summaries
+
+### 4. **Administration**
+- User management
+- Store/branch management
+- System configuration
+
+## Key Database Tables
+
+### Primary Tables
+- `db_items` - Product/item master
+- `db_batches` - Batch tracking for inventory
+- `db_sales` - Sales transaction headers
+- `db_salesitems` - Sales transaction line items
+- `db_purchase` - Purchase transaction headers
+- `db_purchaseitems` - Purchase transaction line items
+- `db_suppliers` - Supplier information
+- `db_category` - Product categories
+- `db_brands` - Brand master data
+- `db_units` - Unit of measurement
+
+### System Tables
+- `db_users` - User accounts
+- `db_stores` - Multi-store support
+- `db_permissions` - Role-based access control
+
+## Development Environment Setup
+
+### Prerequisites
+- XAMPP with PHP 7.4+
+- MySQL/MariaDB
+- Composer for dependency management
+
+### Installation Steps
+1. Clone/copy project to `C:\xampp\htdocs\BILLING`
+2. Run `composer install` to install dependencies
+3. Configure database connection in `application/config/database.php`
+4. Import database from `dbbackup/` directory
+5. Set appropriate file permissions for `uploads/` directory
+6. Access via `http://localhost/BILLING`
+
+## Coding Standards & Best Practices
+
+### CodeIgniter Conventions
+- Controllers: PascalCase (e.g., `Items.php`, `Pos.php`)
+- Models: PascalCase with `_model` suffix (e.g., `Pos_model.php`)
+- Views: lowercase with hyphens (e.g., `items-list.php`)
+- Database tables: prefix `db_` (e.g., `db_items`)
+
+### Security Measures
+- CSRF token validation enabled
+- SQL injection prevention via query builder
+- Input validation and sanitization
+- HTML escaping for output
+- Permission-based access control
+
+### Frontend Standards
+- Bootstrap responsive design
+- jQuery for DOM manipulation
+- AdminLTE for admin interface
+- DataTables for data grids
+- Select2 for enhanced dropdowns
+
+## Common Development Tasks
+
+### Adding New Features
+1. Create controller in `application/controllers/`
+2. Create model in `application/models/`
+3. Create views in `application/views/`
+4. Add routes in `application/config/routes.php`
+5. Update permissions if needed
+
+### Database Changes
+1. Create migration scripts
+2. Update model methods
+3. Test data integrity
+4. Update backup procedures
+
+### UI Modifications
+1. Follow Bootstrap/AdminLTE patterns
+2. Ensure responsive design
+3. Test across different screen sizes
+4. Maintain consistent styling
+
+## Testing Procedures
+
+### Manual Testing Checklist
+- [ ] POS functionality (add items, checkout)
+- [ ] Inventory updates after sales
+- [ ] Batch selection and stock tracking
+- [ ] Invoice generation and printing
+- [ ] User permissions and access control
+- [ ] Report generation
+- [ ] Multi-store operations
+
+### Performance Considerations
+- Database indexing for frequently queried tables
+- Pagination for large data sets
+- Caching for static content
+- Optimized SQL queries
+
+## Troubleshooting Common Issues
+
+### Database Connection Issues
+- Check `application/config/database.php` settings
+- Verify MySQL service is running
+- Ensure proper user privileges
+
+### Permission Errors
+- Check file/folder permissions on `uploads/`
+- Verify user has proper role assignments
+- Check `.htaccess` configuration
+
+### JavaScript Errors
+- Check browser console for errors
+- Verify jQuery and plugin loading
+- Ensure CSRF tokens are included
+
+## Backup Procedures
+
+### Database Backups
+- Automated backups stored in `dbbackup/`
+- Naming convention: `dbbackupDD-MMM-YYYY-HH-MM-SS.gz`
+- Regular backup schedule recommended
+
+### File Backups
+- Include `uploads/` directory
+- Custom theme modifications
+- Configuration files
+
+## Support & Maintenance
+
+### Log Files
+- Application logs: `application/logs/`
+- Error logs: Check web server error logs
+- PHP error logs: Check XAMPP logs
+
+### Version Control Best Practices
+- Commit granular changes
+- Use descriptive commit messages
+- Tag releases appropriately
+- Maintain separate branches for features
+
+### Documentation Updates
+- Update this file when making significant changes
+- Document new features and modifications
+- Include testing procedures for new functionality
+- Maintain changelog for version tracking
+
+---

@@ -200,4 +200,16 @@ class Pos extends MY_Controller {
 		echo json_encode($rows);
 	}
 
+	// Return JSON summary of total batches and in-stock batches for a product
+	public function get_batches_summary_by_product(){
+		$pro_id = $this->input->get('pro_id');
+		if(empty($pro_id) || !is_numeric($pro_id)){
+			echo json_encode(['total'=>0,'in_stock'=>0]);
+			return;
+		}
+		$total = $this->db->from('db_batches')->where('pro_id',$pro_id)->count_all_results();
+		$in_stock = $this->db->from('db_batches')->where('pro_id',$pro_id)->where('quantity >',0)->count_all_results();
+		echo json_encode(['total'=>$total,'in_stock'=>$in_stock]);
+	}
+
 }

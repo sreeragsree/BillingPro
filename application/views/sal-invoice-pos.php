@@ -137,8 +137,8 @@
     ?>
 	<table width="95%" align="center">
 		<tr>
-			<td align="center" width="30%">
-				<img src="<?= base_url($store_logo);?>" width="30%" height="auto">
+			<td align="center" width="40%" style="padding: 5px 0;">
+				<img src="<?= base_url($store_logo);?>" width="50%" height="auto" style="max-width: 200px;">
 			</td>
 		</tr>
 		<tr>
@@ -520,8 +520,8 @@
 		</tr>
 	</table>
 	<center >
-  <div style="margin: 20px 0;">
-    <img src="<?= base_url('theme/dist/img/payQr.png') ?>" alt="Logo" style="max-width: 150px; height: auto;">
+  <div style="margin: 10px 0;">
+    <img src="<?= base_url('theme/dist/img/payQr.png') ?>" alt="QR Code" style="width: 90px; height: 90px; display: block; margin: 0 auto;">
   </div>
   <div class="row no-print">
   <div class="col-md-12">
