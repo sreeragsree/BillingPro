@@ -265,7 +265,8 @@
                                              <thead class="custom_thead">
                                                 <tr class="bg-primary" >
                                                    <th rowspan='2' style="width:20%"><?= $this->lang->line('item_name'); ?></th>
-                                                   <th rowspan='2' style="width:15%;min-width: 180px;"><?= $this->lang->line('quantity'); ?></th>
+                                                   <th rowspan='2' style="width:8%">Batch No</th>
+                                                   <th rowspan='2' style="width:15%;min-width: 180px;">&nbsp;<?= $this->lang->line('quantity'); ?></th>
                                                    <th rowspan='2' style="width:10%"><?= $this->lang->line('purchase_price'); ?></th>
                                                    
                                                    <th rowspan='2' style="width:6%"><?= $this->lang->line('discount'); ?>(<?=$CURRENCY;?>)</th>
@@ -802,6 +803,95 @@
           //alert("final_total() end");
          }
          /* ---------- Final Description of amount end ------------*/
+          
+         // batch methods for purchase return (similar to purchase module)
+         function batch_change(selectElement, row_id, pro_id) {
+            var selectedValue = selectElement.value; // Get selected value
+
+            // check same batch with same item id is present in table or not
+            if (checkForDuplicates()) {
+
+               $.get(base_url + "purchase/get_item_details_with_batch_and_productid", {
+                     pro_id: pro_id,
+                     batch_id: selectedValue
+                  },
+                  function(result) {
+
+                     let jsonData = JSON.parse(result);
+
+                     if (Object.keys(jsonData).length <= 1) {
+
+                        $('#td_data_' + row_id + "_4").val(0);
+                        $('#td_data_' + row_id + "_8").val(0);
+                        $('#td_data_' + row_id + "_5").val(0);
+                        $('#td_data_' + row_id + "_10").val(0);
+                        $('#td_data_' + row_id + "_9").val(0);
+
+                        $('#td_data_' + row_id + "_4").prop('readonly', false);
+
+                        calculate_tax(row_id);
+                        final_total();
+
+                     } else {
+
+                        if (typeof jsonData.purchase_price !== 'undefined' && parseFloat(jsonData.purchase_price) !== 0) {
+                           $('#td_data_' + row_id + "_4").val(jsonData.purchase_price);
+                           $('#td_data_' + row_id + "_4").prop('readonly', true);
+                        } else {
+                           $('#td_data_' + row_id + "_4").prop('readonly', false);
+                        }
+
+                        if (typeof jsonData.quantity !== 'undefined') {
+                           $('#tr_available_qty_' + row_id + "_13").val(jsonData.quantity);
+                        }
+
+                        calculate_tax(row_id);
+                        final_total();
+                     }
+
+                  }
+               ).fail(function(xhr, status, error) {
+                  console.error("AJAX Error:", error);
+                  console.error("Status:", status);
+                  console.error("Response Text:", xhr.responseText);
+               });
+            }
+
+         }
+
+         function checkForDuplicates() {
+            const rows = document.querySelectorAll("tbody tr"); // Select all rows in the table body
+            const combinations = new Set(); // Create a new Set every time to reset duplicates
+
+            rows.forEach((row) => {
+               // Select the item ID input field and batch dropdown
+               const itemIdInput = row.querySelector("[id^='tr_item_id_']");
+               const batchSelect = row.querySelector("[id^='tr_batch_id_']");
+
+               if (!itemIdInput || !batchSelect) {
+                  return;
+               }
+
+               const itemId = itemIdInput.value.trim(); // Get item ID
+               const batchNo = batchSelect.value.trim() || "0"; // Get batch number
+
+               if (itemId && batchNo) {
+                  const key = `${itemId}-${batchNo}`; // Unique key
+
+                  if (combinations.has(key)) {
+                     toastr["warning"]("Duplicate entry detected");
+                     // Remove the duplicate row dynamically
+                     row.remove();
+
+                     return false;
+                  }
+
+                  combinations.add(key); // Add to the set
+               }
+            });
+
+            return true; // No duplicates found
+         }
           
          function removerow(id){//id=Rowid
            

@@ -263,6 +263,8 @@ class Purchase_returns_model extends CI_Model {
 				$description		=$this->xss_html_filter(trim($_REQUEST['description_'.$i]));
 
 				
+				$purchase_batch 		= $this->xss_html_filter(trim($_REQUEST['tr_batch_id_'.$i.'_111']));
+				
 				$purchaseitems_entry = array(
 		    				'purchase_id' 		=> $purchase_id,
 		    				'return_id' 		=> $return_id,
@@ -280,6 +282,7 @@ class Purchase_returns_model extends CI_Model {
 		    				'status'			=> 1,
 		    				'description'		=> $description,
 		    				'tax_type'		=> $tax_type,
+		    				'batch_id'       	=> $purchase_batch,
 		    			);
 				$purchaseitems_entry['store_id']=(store_module() && is_admin()) ? $store_id : get_current_store_id();  	
 				$q2 = $this->db->insert('db_purchaseitemsreturn', $purchaseitems_entry);
@@ -289,8 +292,9 @@ class Purchase_returns_model extends CI_Model {
 				
 				//UPDATE itemS QUANTITY IN itemS TABLE
 				$this->load->model('pos_model');				
-				$q6=$this->pos_model->update_items_quantity($item_id);
-				if(!$q6){
+				$q6   = $this->pos_model->update_items_quantity($item_id);
+				$q666 = $this->pos_model->update_stock_in_batch($item_id,$purchase_batch);
+				if(!$q6 && !$q666){
 					return "failed";
 				}
 				
@@ -636,43 +640,51 @@ class Purchase_returns_model extends CI_Model {
 	}
 
 	public function get_items_info($rowcount,$item_id){
-	    $purchase_id = $_POST['purchase_id'];//empty or value
+	    $purchase_id = isset($_POST['purchase_id']) ? $_POST['purchase_id'] : null; //empty or value
+	    $batch_id    = isset($_POST['batch_id']) ? $_POST['batch_id'] : 0;
 
 	    /*Find the selected item exist or not in purchase entry*/
 	    if(!empty($purchase_id)){
-	    $valid_qty=$this->db->query("select count(*) as valid_qty from db_purchaseitems where item_id=$item_id and purchase_id=$purchase_id")->row()->valid_qty;
-	      if($valid_qty==0){
-	        return 'item_not_exist';
-	        //return "Sorry! This Item Not exist in this Purchase Entry!!";
-	      }
+	        $valid_qty=$this->db->query("select count(*) as valid_qty from db_purchaseitems where item_id=$item_id and purchase_id=$purchase_id")->row()->valid_qty;
+	        if($valid_qty==0){
+	            return 'item_not_exist';
+	            //return "Sorry! This Item Not exist in this Purchase Entry!!";
+	        }
 	    }
 	    
 	    $res1=$this->db->select('*')->from('db_items')->where("id=$item_id")->get()->row();
 	    
 	    $q3=$this->db->query("select * from db_tax where id=".$res1->tax_id)->row();
 
-	    $item_tax_amt = ($res1->tax_type=='Inclusive') ? calculate_inclusive($res1->purchase_price,$q3->tax) :calculate_exclusive($res1->purchase_price,$q3->tax);
+	    // get item batches with quantity > 0
+	    $batches = $this->db->select('*')
+	        ->from('db_batches')
+	        ->where('pro_id',$item_id)
+	        ->where('quantity >',0)
+	        ->get();
 
-	      
-	      $info = array(
-	              'item_tax'          		=> $q3->tax, 
-	              'item_tax_name'       	=> $q3->tax_name, 
-	              'item_name'         		=> $res1->item_name,
-	              'item_price'        		=> $res1->price, 
-	              'item_available_qty'    	=> $res1->stock,
-	              'item_id'           		=> $res1->id, 
-	              'item_purchase_price'     => $res1->purchase_price, 
-	              'item_tax_id'        	 	=> $res1->tax_id, 
-	              'item_purchase_qty'      	=> 1, 
-	              'description'         	=> '', 
-	              'item_tax_type'       	=> $res1->tax_type, 
-	              'item_tax_amt'        	=> $item_tax_amt, 
-	              'item_discount'       	=> 0, 
-	              'item_discount_type'    	=> 'Percentage', 
-	              'item_discount_input'     => 0, 
+	    $item_tax_amt = ($res1->tax_type=='Inclusive') ? calculate_inclusive($res1->purchase_price,$q3->tax) : calculate_exclusive($res1->purchase_price,$q3->tax);
+
+	    $info = array(
+	              'item_tax'            => $q3->tax, 
+	              'item_tax_name'       => $q3->tax_name, 
+	              'item_name'           => $res1->item_name,
+	              'item_price'          => $res1->price, 
+	              'item_available_qty'  => $res1->stock,
+	              'item_id'             => $res1->id, 
+	              'item_purchase_price' => $res1->purchase_price, 
+	              'item_tax_id'         => $res1->tax_id, 
+	              'item_purchase_qty'   => 1, 
+	              'description'         => '', 
+	              'item_tax_type'       => $res1->tax_type, 
+	              'item_tax_amt'        => $item_tax_amt, 
+	              'item_discount'       => 0, 
+	              'item_discount_type'  => 'Percentage', 
+	              'item_discount_input' => 0,
+	              'batch'               => $batches->result_array(),
+	              'batch_id'            => $batch_id, 
 	            );
 	      
-
 	    $this->return_row_with_data($rowcount,$info);
 	  }
 	/* For Purchase Items List Retrieve*/
@@ -683,27 +695,33 @@ class Purchase_returns_model extends CI_Model {
 	      $res2=$this->db->query("select * from db_items where id=".$res1->item_id)->row();
 	      $q3=$this->db->query("select * from db_tax where id=".$res1->tax_id)->row();
 	      
+	      // batches for this item
+	      $batches = $this->db->select('*')
+	          ->from('db_batches')
+	          ->where('pro_id',$res1->item_id)
+	          ->where('quantity >',0)
+	          ->get();
+	      
 	      $info = array(
-	              'item_tax'          	=> $q3->tax, 
-	              'item_tax_name'       => $q3->tax_name, 
-	              'item_name'         	=> $res2->item_name,
-	              'item_price'        	=> $res2->price, 
-	              'item_available_qty'  => $res1->purchase_qty,
-	              'item_id'           	=> $res1->item_id, 
-	              'item_purchase_price' => $res1->price_per_unit, 
-	              'item_tax_id'         => $res1->tax_id, 
-	              'item_purchase_qty'   => $res1->purchase_qty,
-	              'description'         => $res1->description, 
-	              'item_tax_type'       => $res1->tax_type, 
-	              'item_tax_amt'        => $res1->tax_amt, 
-	              'item_discount'       => $res1->discount_input, 
-	              'item_discount_type'  => $res1->discount_type, 
-	              'item_discount_input' => $res1->discount_input, 
+	              'item_tax'           => $q3->tax, 
+	              'item_tax_name'      => $q3->tax_name, 
+	              'item_name'          => $res2->item_name,
+	              'item_price'         => $res2->price, 
+	              'item_available_qty' => $res1->purchase_qty,
+	              'item_id'            => $res1->item_id, 
+	              'item_purchase_price'=> $res1->price_per_unit, 
+	              'item_tax_id'        => $res1->tax_id, 
+	              'item_purchase_qty'  => $res1->purchase_qty,
+	              'description'        => $res1->description, 
+	              'item_tax_type'      => $res1->tax_type, 
+	              'item_tax_amt'       => $res1->tax_amt, 
+	              'item_discount'      => $res1->discount_input, 
+	              'item_discount_type' => $res1->discount_type, 
+	              'item_discount_input'=> $res1->discount_input,
+	              'batch'              => $batches->result_array(),
+	              'batch_id'           => $res1->batch_id, 
 	            );
 	      
-	      
-
-
 	      $result = $this->return_row_with_data($rowcount++,$info);
 	    }
 	    return $result;
@@ -729,8 +747,14 @@ class Purchase_returns_model extends CI_Model {
 	      //$info['item_available_qty'] = ($item_stock_qty<$item_purchase_qty) ? $item_stock_qty+$res1->return_qty : $item_purchase_qty+$res1->return_qty;
 	      //NEW
 	      $item_available_qty = (!empty($res1->purchase_id)) ? $item_purchase_qty : $item_stock_qty+$res1->return_qty;
-
-
+		
+		  // batches for this item
+		  $batches = $this->db->select('*')
+		      ->from('db_batches')
+		      ->where('pro_id',$res1->item_id)
+		      ->where('quantity >',0)
+		      ->get();
+		
 	      $info = array(
 	              'item_tax'          		=> $q3->tax, 
 	              'item_tax_name'       	=> $q3->tax_name, 
@@ -746,9 +770,11 @@ class Purchase_returns_model extends CI_Model {
 	              'item_tax_amt'        	=> $res1->tax_amt, 
 	              'item_discount'       	=> $res1->discount_input, 
 	              'item_discount_type'    	=> $res1->discount_type, 
-	              'item_discount_input'     => $res1->discount_input, 
+	              'item_discount_input'     => $res1->discount_input,
+	              'batch'                  => $batches->result_array(),
+	              'batch_id'               => $res1->batch_id, 
 	            );
-
+	
 	      
 	      $result = $this->return_row_with_data($rowcount++,$info);
 	    }
@@ -769,6 +795,30 @@ class Purchase_returns_model extends CI_Model {
                   		<i onclick="show_purchase_item_modal(<?=$rowcount;?>)" class="fa fa-edit pointer"></i>
                   	</label>
                </td>
+
+               <td id="td_<?=$rowcount;?>_111">
+                  <!-- batch selection -->
+                  <select required onchange="batch_change(this,<?=$rowcount;?>,<?=$item_id;?>)" type="text" style="font-weight: bold;" id="tr_batch_id_<?=$rowcount;?>_111" name="tr_batch_id_<?=$rowcount;?>_111" class="form-control no-padding batchListing">
+
+                        <option value="">Choose</option>
+                        <?php
+                        if (isset($batch) && is_array($batch) && count($batch) > 0) {
+                            foreach ($batch as $key => $res) {
+                        ?>
+
+                            <option
+                                    value="<?= $res['id']; ?>"
+                                <?= ($batch_id != 0 && $res['id'] == $batch_id) || ($batch_id == 0 && $key == 0) ? 'selected' : ''; ?>>
+                                <?= number_format((float)$res['purchase_price'], 4, '.', ''); ?> - <?= $res['alphabet_price']; ?>
+                            </option>
+                        <?php
+                            }
+                        }
+                        ?>
+
+                  </select>
+               </td>
+
                <!-- Qty -->
                <td id="td_<?=$rowcount;?>_3">
                   <div class="input-group ">

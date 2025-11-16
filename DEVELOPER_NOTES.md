@@ -1,3 +1,30 @@
+## Sales Return & Purchase Return: Batch Dropdown & Batch-wise Handling (2025-10-25)
+
+### Overview
+- Aligned batch selection and batch-wise stock behavior for **Sales Return** and **Purchase Return** with existing **Sales** and **Purchase** modules.
+- Ensures consistent dropdown labels, per-batch quantities, and stock updates.
+
+### Sales Return (`sales_return/create`)
+- **Model**: `application/models/Sales_return_model.php`
+  - `get_items_info`, `sales_list`, `return_sales_list` now load `db_batches` for each item (only batches with `quantity > 0`).
+  - `return_row_with_data` renders a batch `<select>` (`tr_batch_id_{row}_111`) with option label:
+    - `{sales_price (4dp)} - {alphabet_price}`.
+  - `verify_save_and_update` stores `batch_id` into `db_salesitemsreturn` and calls `Pos_model::update_stock_in_batch($item_id, $batch_id)` alongside `update_items_quantity`.
+- **View / JS**:
+  - `application/views/sales-return.php` adds a **Batch No** column and inline `batch_change()` + `checkForDuplicates()` helper functions.
+  - `theme/js/sales-return.js` autocomplete includes `batch_id` and passes it into `return_row_with_data(item_id, batch_id)`.
+
+### Purchase Return (`purchase_return/create`)
+- **Model**: `application/models/Purchase_returns_model.php`
+  - `get_items_info`, `purchase_list`, `return_purchase_list` now query `db_batches` (per item, `quantity > 0`) and pass `batch` + `batch_id` into `return_row_with_data`.
+  - `return_row_with_data` renders a batch `<select>` (`tr_batch_id_{row}_111`) with option label:
+    - `{purchase_price (4dp)} - {alphabet_price}`.
+  - `verify_save_and_update` reads `tr_batch_id_{i}_111`, persists `batch_id` into `db_purchaseitemsreturn`, and calls `Pos_model::update_stock_in_batch($item_id, $batch_id)` after `update_items_quantity`.
+- **View / JS**:
+  - `application/views/purchase_return.php` adds a **Batch No** column and inline `batch_change()` + `checkForDuplicates()` functions mirroring Purchase.
+  - `theme/js/purchase_return.js` autocomplete maps `batch_id` and passes it into `return_row_with_data(item_id, batch_id)`; each new row triggers `.batchListing.change()` to apply the initial batch.
+
+---
 # Developer Notes: POS Invoice Updates (2025-10-22)
 
 ## Permission Management
@@ -155,6 +182,8 @@ This code should be placed in the POS invoice template where you want the QR cod
 - No changes were made to DB schema; db_salesitems must already include a batch_id column for persistence.
 
 ---
+
+
 
 ## Overview
 

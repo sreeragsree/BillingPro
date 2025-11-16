@@ -161,6 +161,7 @@ $("#item_search").autocomplete({
                             id: el.id,
                             item_name: el.value,
                             stock: el.stock,
+                            batch_id: el.batch_id,
                             //customer_dob: el.customer_dob,
                             //address: el.address,
                         };
@@ -188,12 +189,14 @@ $("#item_search").autocomplete({
               if(isNaN(ui.content[0].id)){
                 return;
               }
-              var stock=ui.content[0].stock;
-              var item_id=ui.content[0].id;
+              var stock   = ui.content[0].stock;
+              var item_id = ui.content[0].id;
+              var batch_id = ui.content[0].batch_id;
             }
             else{
-              var stock=ui.item.stock;
-              var item_id=ui.item.id;
+              var stock   = ui.item.stock;
+              var item_id = ui.item.id;
+              var batch_id = ui.item.batch_id;
             }
 
             if(parseFloat(stock)==0){
@@ -201,9 +204,7 @@ $("#item_search").autocomplete({
               return false;
             }
 
-            
-              return_row_with_data(item_id);  
-            
+            return_row_with_data(item_id,batch_id);  
             $("#item_search").val('');
 
         },   
@@ -226,7 +227,7 @@ function check_same_item(item_id){
   return true;
 }
 
-function return_row_with_data(item_id){
+function return_row_with_data(item_id,batch_id){
   //CHECK SAME ITEM ALREADY EXIST IN ITEMS TABLE 
   var item_check=check_same_item(item_id);
   if(!item_check){return false;}
@@ -242,7 +243,8 @@ function return_row_with_data(item_id){
   $("#item_search").addClass('ui-autocomplete-loader-center');
 	var base_url=$("#base_url").val();
 	var rowcount=$("#hidden_rowcount").val();
-	$.post(base_url+"purchase_return/return_row_with_data/"+rowcount+"/"+item_id,{purchase_id:purchase_id},function(result){
+    var batch_id = isNaN(parseInt(batch_id)) ? 0 : parseInt(batch_id);
+	$.post(base_url+"purchase_return/return_row_with_data/"+rowcount+"/"+item_id,{purchase_id:purchase_id,batch_id:batch_id},function(result){
         //alert(result);
         if(result=='item_not_exist'){
           toastr["error"]("Sorry! This Item Not exist in this Purchase Entry!!");
@@ -251,6 +253,7 @@ function return_row_with_data(item_id){
         else{
           $('#purchase_table tbody').append(result);
           $("#hidden_rowcount").val(parseInt(rowcount)+1);
+          $(".batchListing").trigger('change');
           success.currentTime = 0;
           success.play();
           enable_or_disable_item_discount(); 

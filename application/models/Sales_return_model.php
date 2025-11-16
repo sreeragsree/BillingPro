@@ -318,6 +318,8 @@ class Sales_return_model extends CI_Model {
 				$purchase_price = $item_details->price;
 
 			
+				$sales_batch 			= $this->xss_html_filter(trim($_REQUEST['tr_batch_id_'.$i.'_111']));
+
 				$salesitems_entry = array(
 		    				'sales_id' 			=> $sales_id,
 		    				'return_id' 		=> $return_id, 
@@ -336,7 +338,7 @@ class Sales_return_model extends CI_Model {
 		    				'total_cost' 		=> $total_cost,
 		    				'purchase_price' 	=> $purchase_price,
 		    				'status'	 		=> 1,
-
+		    				'batch_id'          => $sales_batch,
 
 		    			);
 				$salesitems_entry['store_id']=(store_module() && is_admin()) ? $store_id : get_current_store_id();  	
@@ -347,13 +349,14 @@ class Sales_return_model extends CI_Model {
 
 				//UPDATE itemS QUANTITY IN itemS TABLE
 				$this->load->model('pos_model');				
-				$q6=$this->pos_model->update_items_quantity($item_id);
-				if(!$q6){
+				$q6   = $this->pos_model->update_items_quantity($item_id);
+				$q666 = $this->pos_model->update_stock_in_batch($item_id,$sales_batch);
+				if(!$q6 && !$q666){
 					return "failed";
 				}
 				
+				
 			}
-		
 		}//for end
 
 		if($amount=='' || $amount==0){$amount=null;}
@@ -760,7 +763,10 @@ class Sales_return_model extends CI_Model {
 	}
 	public function get_items_info($rowcount,$item_id){
 
-		$sales_id = $_POST['sales_id'];//empty or value
+		// Expecting optional POST vars: sales_id, warehouse_id, batch_id
+		extract($_POST);
+
+		$sales_id = isset($sales_id) ? $sales_id : null; // empty or value
 
 	    //Find the selected item exist or not in sales entry
 	    $invoice_sales_qty=0;
@@ -775,6 +781,13 @@ class Sales_return_model extends CI_Model {
 		$res1=$this->db->select('*')->from('db_items')->where("id=$item_id")->get()->row();
 		
 		$q3=$this->db->query("select * from db_tax where id=".$res1->tax_id)->row();
+
+		// Return item batches with quantity > 0
+		$batches = $this->db->select('*')
+		    ->from('db_batches')
+		    ->where("pro_id", $item_id)
+		    ->where("quantity >", 0)
+		    ->get();
 
 		$item_tax_amt = ($res1->tax_type=='Inclusive') ? calculate_inclusive($res1->sales_price,$q3->tax) :calculate_exclusive($res1->sales_price,$q3->tax);
 
@@ -794,7 +807,11 @@ class Sales_return_model extends CI_Model {
 							'item_tax_amt' 				=> $item_tax_amt, 
 							'item_discount' 			=> 0, 
 							'item_discount_type' 		=> $res1->discount_type, 
-							'item_discount_input' 		=> $res1->discount, 
+							'item_discount_input' 		=> $res1->discount,
+							'service_bit'            => $res1->service_bit,
+							'wholesale_price'        => $res1->wholesale_price,
+							'batch'                  => $batches->result_array(),
+							'batch_id'               => isset($batch_id) ? $batch_id : 0,
 						);
 			
 
@@ -808,6 +825,13 @@ class Sales_return_model extends CI_Model {
 		foreach ($q1->result() as $res1) {
 			$res2=$this->db->query("select * from db_items where id=".$res1->item_id)->row();
 			$q3=$this->db->query("select * from db_tax where id=".$res1->tax_id)->row();
+			
+			// batches for this item
+			$batches = $this->db->select('*')
+			    ->from('db_batches')
+			    ->where('pro_id', $res1->item_id)
+			    ->where('quantity >', 0)
+			    ->get();
 			
 			$info = array(
 							'item_tax' 					=> $q3->tax, 
@@ -824,7 +848,11 @@ class Sales_return_model extends CI_Model {
 							'item_tax_amt' 				=> $res1->tax_amt, 
 							'item_discount' 			=> $res1->discount_input, 
 							'item_discount_type' 		=> $res1->discount_type, 
-							'item_discount_input' 		=> $res1->discount_input, 
+							'item_discount_input' 		=> $res1->discount_input,
+							'service_bit'            => $res2->service_bit,
+							'wholesale_price'        => $res2->wholesale_price,
+							'batch'                  => $batches->result_array(),
+							'batch_id'               => $res1->batch_id,
 						);
 			
 			
@@ -840,7 +868,7 @@ class Sales_return_model extends CI_Model {
 		$q1=$this->db->select('*')->from('db_salesitemsreturn')->where("return_id=$return_id")->get();
 		$rowcount =1;
 		foreach ($q1->result() as $res1) {
-			$q2=$this->db->query("select item_name,stock,tax_type,price,sales_price from db_items where id=".$res1->item_id);
+			$q2=$this->db->query("select item_name,stock,tax_type,price,sales_price,wholesale_price,service_bit from db_items where id=".$res1->item_id);
 			$q3=$this->db->query("select * from db_tax where id=".$res1->tax_id)->row();
 			
 			
@@ -855,6 +883,13 @@ class Sales_return_model extends CI_Model {
 			//$info['item_available_qty'] = ($item_stock_qty<$item_sales_qty) ? $item_stock_qty+$res1->return_qty : $item_sales_qty+$res1->return_qty;	
 			//NEW
 			$item_available_qty = (!empty($res1->sales_id)) ? $item_sales_qty : $item_stock_qty+$res1->return_qty;
+
+			// batches for this item
+			$batches = $this->db->select('*')
+			    ->from('db_batches')
+			    ->where('pro_id', $res1->item_id)
+			    ->where('quantity >', 0)
+			    ->get();
 
 
 			$info = array(
@@ -872,7 +907,11 @@ class Sales_return_model extends CI_Model {
 							'item_tax_amt' 				=> $res1->tax_amt, 
 							'item_discount' 			=> $res1->discount_input, 
 							'item_discount_type' 		=> $res1->discount_type, 
-							'item_discount_input' 		=> $res1->discount_input, 
+							'item_discount_input' 		=> $res1->discount_input,
+							'service_bit'            => $q2->row()->service_bit,
+							'wholesale_price'        => $q2->row()->wholesale_price,
+							'batch'                  => $batches->result_array(),
+							'batch_id'               => $res1->batch_id,
 						);
 
 			
@@ -894,6 +933,30 @@ class Sales_return_model extends CI_Model {
                   		<i onclick="show_sales_item_modal(<?=$rowcount;?>)" class="fa fa-edit pointer"></i>
                   	</label>
                </td>
+
+               <td id="td_<?=$rowcount;?>_111">
+                  <!-- batch selection -->
+                  <select required onchange="batch_change(this,<?=$rowcount;?>,<?=$item_id;?>)" type="text" style="font-weight: bold;" id="tr_batch_id_<?=$rowcount;?>_111" name="tr_batch_id_<?=$rowcount;?>_111" class="form-control no-padding batchListing">
+
+                        <option value="">Choose</option>
+                        <?php
+                        if (isset($batch) && is_array($batch) && count($batch) > 0) {
+                            foreach ($batch as $key => $res) {
+                        ?>
+
+                            <option
+                                    value="<?= $res['id']; ?>"
+                                <?= ($batch_id != 0 && $res['id'] == $batch_id) || ($batch_id == 0 && $key == 0) ? 'selected' : ''; ?>>
+                                <?= number_format((float)$res['sales_price'], 4, '.', ''); ?> - <?= $res['alphabet_price']; ?>
+                            </option>
+                        <?php
+                            }
+                        }
+                        ?>
+
+                  </select>
+               </td>
+
                <!-- Qty -->
                <td id="td_<?=$rowcount;?>_3">
                   <div class="input-group ">
@@ -906,7 +969,10 @@ class Sales_return_model extends CI_Model {
                </td>
                
                <!-- Unit Cost -->
-               <td id="td_<?=$rowcount;?>_10"><input type="text" name="td_data_<?=$rowcount;?>_10" id="td_data_<?=$rowcount;?>_10" class="form-control text-right no-padding only_currency text-center" onkeyup="calculate_tax(<?=$rowcount;?>)" value="<?=store_number_format($item_sales_price,0);?>"></td>
+               <td id="td_<?=$rowcount;?>_10">
+                  <input type="text" name="td_data_<?=$rowcount;?>_10" id="td_data_<?=$rowcount;?>_10" class="form-control text-right no-padding only_currency text-center" onkeyup="calculate_tax(<?=$rowcount;?>)" value="<?=store_number_format($item_sales_price,0);?>">
+                  <span id="ws_pr_<?=$rowcount; ?>">W.P : <?= $wholesale_price; ?> </span>
+               </td>
 
                <!-- Discount -->
                <td id="td_<?=$rowcount;?>_8">

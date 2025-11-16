@@ -175,6 +175,8 @@ $("#item_search").autocomplete({
                             id: el.id,
                             item_name: el.value,
                             stock: el.stock,
+                            service_bit: el.service_bit,
+                            batch_id: el.batch_id,
                            // mobile: el.mobile,
                             //customer_dob: el.customer_dob,
                             //address: el.address,
@@ -203,10 +205,14 @@ $("#item_search").autocomplete({
               }
               var stock=ui.content[0].stock;
               var item_id=ui.content[0].id;
+              var service_bit = ui.content[0].service_bit;
+              var batch_id = ui.content[0].batch_id;
             }
             else{
               var stock=ui.item.stock;
               var item_id=ui.item.id;
+              var service_bit = ui.item.service_bit;
+              var batch_id = ui.item.batch_id;
             }
 
             /*if(parseFloat(stock)<=0){
@@ -215,9 +221,9 @@ $("#item_search").autocomplete({
               failed.play();
               return false;
             }
-            else{*/
+            else{
               if(restrict_quantity(item_id)){
-                return_row_with_data(item_id);  
+                return_row_with_data(item_id,batch_id);  
               }
             /*}*/
             
@@ -243,14 +249,14 @@ function check_same_item(item_id){
   return true;
 }
 
-function return_row_with_data(item_id){
+function return_row_with_data(item_id,batch_id){
   //CHECK SAME ITEM ALREADY EXIST IN ITEMS TABLE 
   var item_check=check_same_item(item_id);
   if(!item_check){return false;}
   //END
   
   $("#item_search").addClass('ui-autocomplete-loader-center');
-  /*Check purchase id avaialable or not*/
+  /*Check sales id avaialable or not*/
   if(!document.getElementById("sales_id")){
     var sales_id='';
   }else{
@@ -258,9 +264,11 @@ function return_row_with_data(item_id){
   }
   /*end*/
 
+
 	var base_url=$("#base_url").val();
 	var rowcount=$("#hidden_rowcount").val();
-	$.post(base_url+"sales_return/return_row_with_data/"+rowcount+"/"+item_id,{sales_id:sales_id},function(result){
+	var warehouse_id = $("#warehouse_id").val();
+	$.post(base_url+"sales_return/return_row_with_data/"+rowcount+"/"+item_id,{sales_id:sales_id,warehouse_id:warehouse_id,batch_id:batch_id},function(result){
         //alert(result);
         if(result=='item_not_exist'){
           toastr["error"]("Sorry! This Item Not exist in this Sales Entry!!");
@@ -269,6 +277,7 @@ function return_row_with_data(item_id){
         else{
           $('#sales_table tbody').append(result);
           $("#hidden_rowcount").val(parseInt(rowcount)+1);
+          $(".batchListing").trigger('change');
           success.currentTime = 0;
           success.play();
           enable_or_disable_item_discount(); 
@@ -278,7 +287,6 @@ function return_row_with_data(item_id){
         $("#item_search").removeClass('ui-autocomplete-loader-center');
     }); 
 }
-//INCREMENT ITEM
 function increment_qty(rowcount){
   
   var flag = restrict_quantity($("#tr_item_id_"+rowcount).val());
