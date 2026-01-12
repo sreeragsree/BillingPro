@@ -174,6 +174,7 @@ class Customers_model extends CI_Model {
 	                'address'           	=> $address,
 	                'opening_balance'       => $opening_balance,
 	                'tax_number'          	=> $tax_number,
+	                'customer_group_id'     => (!empty($customer_group_id)) ? $customer_group_id : NULL,
 	                /*System Info*/
 	                'created_date'        	=> $CUR_DATE,
 	                'created_time'        	=> $CUR_TIME,
@@ -271,6 +272,7 @@ class Customers_model extends CI_Model {
 			$data['mobile']=$query->mobile;
 			$data['phone']=$query->phone;
 			$data['email']=$query->email;
+			$data['customer_group_id']=$query->customer_group_id;
 			
 			$data['gstin']=$query->gstin;
 			$data['tax_number']=$query->tax_number;
@@ -328,6 +330,7 @@ class Customers_model extends CI_Model {
 			                'tax_number'          	=> $tax_number,
 			                'location_link'         => $location_link,
 			                'credit_limit'         => empty($credit_limit) ? null : $credit_limit,
+			                'customer_group_id'    => (!empty($customer_group_id)) ? $customer_group_id : NULL,
 			              );
 			    if(isset($price_level_type)){
 					$info['price_level_type'] = $price_level_type;
@@ -1376,8 +1379,30 @@ class Customers_model extends CI_Model {
 		$store_id = (isset($_REQUEST['store_id'])) ? $_REQUEST['store_id'] : get_current_store_id();
 		$q = '';
 		
+		// Debug: Log the received customer_group_id
+		// error_log("Customer Group ID received: " . (isset($_REQUEST['customer_group_id']) ? $_REQUEST['customer_group_id'] : 'NOT SET'));
+		// error_log("Customer Group ID value: '" . $customer_group_id . "'");
+		// error_log("Customer Group ID length: " . strlen($customer_group_id));
+		
 		$this->db->select("id, customer_name, mobile, sales_due, opening_balance, tot_advance, delete_bit")->from('db_customers');
 		$this->db->where("store_id",$store_id);
+		$this->db->where("status",1);
+		$this->db->where("delete_bit",0);
+
+		$customer_group_id = isset($_REQUEST['customer_group_id']) ? $_REQUEST['customer_group_id'] : '';
+		
+		// Handle customer group filtering
+		if($customer_group_id !== '' && $customer_group_id !== null && $customer_group_id !== 'undefined') {
+			if($customer_group_id === '0') {
+				// Show customers with no group (NULL or empty)
+				$this->db->where("(customer_group_id IS NULL OR customer_group_id = '')");
+			} else {
+				// Show customers from the selected group
+				$this->db->where("customer_group_id", $customer_group_id);
+			}
+		}
+		// If customer_group_id is empty, null, or 'undefined', show all customers (no additional WHERE clause)
+		
 		if(!empty($id)){
 
 			$this->db->where("id",$id);
@@ -1388,7 +1413,7 @@ class Customers_model extends CI_Model {
 
 			$this->db->where("(upper(customer_name) like '%$q%' or upper(mobile) like '%$q%')");
 		}
-		$this->db->limit(10);
+		// Removed limit to show all customers
 		//echo $this->db->get_compiled_select();exit;
 		$query = $this->db->get();
 

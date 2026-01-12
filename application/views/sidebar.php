@@ -425,6 +425,10 @@ $CI = &get_instance();
                 <li class="customers-view-active-li"><a href="<?php echo $base_url; ?>customers"><i class="fa fa-list "></i> <span><?= $this->lang->line('customers_list'); ?></span></a></li>
               <?php } ?>
 
+              <?php if ($CI->permissions('customers_view')) { ?>
+                <li class="customer-group-view-active-li"><a href="<?php echo $base_url; ?>customer_groups/view"><i class="fa fa-list "></i> <span>Customer Groups</span></a></li>
+              <?php } ?>
+
               <?php if ($CI->permissions('suppliers_add')) { ?>
                 <li class="suppliers-active-li"><a href="<?php echo $base_url; ?>suppliers/add"><i class="fa fa-plus-square-o "></i> <span><?= $this->lang->line('add_supplier'); ?></span></a></li>
               <?php } ?>

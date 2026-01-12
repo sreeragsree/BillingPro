@@ -12,7 +12,7 @@
       <div class="wrapper">
          <?php include"sidebar.php"; ?>
          <?php
-            if(!isset($customer_name)){
+           if(!isset($customer_name)){
                $customer_name=$mobile=$phone=$email=
                $country_id=$state_id=$city=$postcode=$address=$shipping_location_link=
                $shipping_country=$shipping_state=$shipping_city=$shipping_postcode=$shipping_address=
@@ -22,6 +22,7 @@
                $price_level ='0';
                $opening_balance=0;
                $credit_limit='-1';
+               $customer_group_id='';
             }
             ?>
          <!-- Content Wrapper. Contains page content -->
@@ -87,6 +88,15 @@
                                        <div class="col-sm-4">
                                           <input type="text" class="form-control no_special_char_no_space" id="mobile" name="mobile" placeholder="+1234567890" value="<?php print $mobile; ?>"  >
                                           <span id="mobile_msg" style="display:none" class="text-danger"></span>
+                                       </div>
+                                    </div>
+                                    <div class="form-group">
+                                       <label for="customer_group_id" class="col-sm-2 control-label">Customer Group<label class="text-danger">*</label></label>
+                                       <div class="col-sm-4">
+                                          <select class="form-control select2" id="customer_group_id" name="customer_group_id" style="width: 100%;">
+                                             <?= get_customer_groups_select_list(isset($customer_group_id) ? $customer_group_id : '', get_current_store_id(), true); ?>
+                                          </select>
+                                          <span id="customer_group_id_msg" style="display:none" class="text-danger"></span>
                                        </div>
                                     </div>
                                     <div class="form-group">

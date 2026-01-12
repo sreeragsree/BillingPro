@@ -22,3 +22,9 @@ ERROR - 2025-11-16 19:12:09 --> 404 Page Not Found: Uploads/items
 ERROR - 2025-11-16 19:12:56 --> 404 Page Not Found: Theme/bower_components
 ERROR - 2025-11-16 19:12:56 --> 404 Page Not Found: Uploads/items
 ERROR - 2025-11-16 19:12:59 --> 404 Page Not Found: Uploads/items
+ERROR - 2025-11-16 20:01:17 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-11-16 20:05:35 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-11-16 20:09:32 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-11-16 20:18:07 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-11-16 20:31:04 --> 404 Page Not Found: Theme/plugins
+ERROR - 2025-11-16 20:32:13 --> 404 Page Not Found: Uploads/site

@@ -24,7 +24,8 @@ class Customers extends MY_Controller {
 	}
 
 	public function newcustomers(){
-		$this->form_validation->set_rules('customer_name', 'Customer Name', 'trim|required');
+			$this->form_validation->set_rules('customer_name', 'Customer Name', 'trim|required');
+			$this->form_validation->set_rules('customer_group_id', 'Customer Group', 'trim|required');
 
 
 		if ($this->form_validation->run() == TRUE) {
@@ -323,5 +324,20 @@ class Customers extends MY_Controller {
 
 	public function getCustomers($id=''){
 		echo $this->customers->getCustomersJson($id);
+	}
+	
+	public function get_customers_list(){
+		$this->permission_check_with_msg('customers_view');
+		
+		$store_id = get_current_store_id();
+		$customers = $this->db->select('id, customer_name, mobile')
+				->from('db_customers')
+				->where('store_id', $store_id)
+				->where('status', 1) // Only active customers
+				->order_by('customer_name', 'asc')
+				->get()
+				->result();
+		
+		echo json_encode($customers);
 	}
 }

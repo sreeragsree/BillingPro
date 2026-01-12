@@ -201,6 +201,15 @@
 
 
                         </div>
+
+                           <div class="form-group">
+                           <label for="customer_group_filter_id" class="col-sm-2 control-label">Customer Group</label>
+                           <div class="col-sm-3">
+                              <select class="form-control select2" id="customer_group_filter_id" name="customer_group_filter_id" style="width: 100%;">
+                                 <?= get_customer_groups_select_list(null, get_current_store_id(), true); ?>
+                              </select>
+                           </div>
+                        </div>
                         <div class="form-group">
                            <label for="customer_id" class="col-sm-2 control-label"><?= $this->lang->line('customer_name'); ?><label class="text-danger">*</label></label>
                            <div class="col-sm-3">
@@ -222,8 +231,11 @@
                               </div>
                               <span id="sales_date_msg" style="display:none" class="text-danger"></span>
                            </div>
-                        </div>
-                        <div class="form-group">
+                         </div>
+                      
+                        
+                        
+                         <div class="form-group">
                            <label for="reference_no" class="col-sm-2 control-label"><?= $this->lang->line('reference_no'); ?> </label>
                            <div class="col-sm-3">
                               <input type="text" value="<?php echo  $reference_no; ?>" class="form-control " id="reference_no" name="reference_no" placeholder="">
@@ -855,6 +867,16 @@
       function getCustomerSelectionId() {
          return '#customer_id';
       }
+
+      function getCustomerGroupSelectionId() {
+         return '#customer_group_filter_id';
+      }
+
+      $(document).on('change', '#customer_group_filter_id', function () {
+         var $customerSelect = $('#customer_id');
+         $customerSelect.val(null).trigger('change');
+         $('.customer_previous_due').text('0.00');
+      });
 
       $(document).ready(function() {
 

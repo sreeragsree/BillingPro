@@ -244,6 +244,35 @@
 	    return $str;
  }
 
+ function get_customer_groups_select_list($select_id='',$store_id='',$show_select=false){
+ 	  $CI =& get_instance();
+
+	  if(!empty($store_id)){
+	    $CI->db->where("store_id",$store_id);
+	  } else {
+	    $CI->db->where("store_id",get_current_store_id());
+	  }
+
+	  $q1=$CI->db->select("*")->where("status=1")->from("db_customer_groups")->get();
+	  $str='';
+	   if($q1->num_rows($q1)>0)
+	    {  
+	    	if($show_select){
+	    		$str.='<option value="">-Select-</option>';
+	    	}
+	        foreach($q1->result() as $res1)
+	      { 
+	        $selected = ($select_id==$res1->id)? 'selected' : '';
+	        $str.="<option $selected value='".$res1->id."'>".$res1->group_name."</option>";
+	      }
+	    }
+	    else
+	    {
+	    	$str.='<option value="">No Records Found</option>'; 
+	    }
+	    return $str;
+ }
+
   function get_suppliers_select_list($select_id='',$store_id='',$show_select=false){
  	  $CI =& get_instance();
 

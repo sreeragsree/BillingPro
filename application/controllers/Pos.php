@@ -40,6 +40,7 @@ class Pos extends MY_Controller {
 	public function newcustomer(){
 	
 		$this->form_validation->set_rules('customer_name', 'Customer Name', 'trim|required');
+		$this->form_validation->set_rules('customer_group_id', 'Customer Group', 'trim|required');
 		
 		if ($this->form_validation->run() == TRUE) {
 			$this->load->model('customers_model');

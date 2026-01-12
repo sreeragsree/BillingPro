@@ -30,6 +30,7 @@ $(document).ready(function(){
                      return {
                            searchTerm: params.term, // search term
                            store_id:$("#store_id").val(),
+                           customer_group_id: (typeof getCustomerGroupSelectionId === 'function') ? $(getCustomerGroupSelectionId()).val() : '',
                      };
                   },
                   processResults: function (response) {
@@ -118,6 +119,8 @@ function autoLoadFirstCustomer(customer_id='') {
           async: false, // Make the request synchronous
           data:{
             store_id : $("#store_id").val(),
+            // Ensure initial load also respects selected customer group (if any)
+            customer_group_id: (typeof getCustomerGroupSelectionId === 'function') ? $(getCustomerGroupSelectionId()).val() : '',
           },
           
       }).then(function (serverResponse) {
