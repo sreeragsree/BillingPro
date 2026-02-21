@@ -570,7 +570,7 @@ $CI = &get_instance();
       <?php } ?><!-- is_user() -->
 
       <?php if (!is_user()) { ?>
-        <?php if (($CI->permissions('accounts_add') || $CI->permissions('accounts_view') || $CI->permissions('journal_add') || $CI->permissions('journal_view')) && accounts_module()) { ?>
+        <?php if (($CI->permissions('accounts_add') || $CI->permissions('accounts_view') || $CI->permissions('journal_add') || $CI->permissions('journal_view') || $CI->permissions('daily_cash_closing_view')) && accounts_module()) { ?>
           <!-- <li class="header">ACCOUNTING</li> -->
           <li class="accounts_list-active-li accounts-active-li journal-active-li journal_list-active-li money_transfer-active-li money_transfer_list-active-li money_deposit-active-li money_deposit_list-active-li cash_transactions-active-li treeview">
             <a href="#">
@@ -601,6 +601,10 @@ $CI = &get_instance();
 
               <?php if ($CI->permissions('cash_transactions')) { ?>
                 <li class="cash_transactions-active-li"><a href="<?php echo $base_url; ?>accounts/cash_transactions"><i class="fa fa-exchange "></i> <span><?= $this->lang->line('cash_transactions'); ?></span></a></li>
+              <?php } ?>
+
+              <?php if ($CI->permissions('daily_cash_closing_view')) { ?>
+                <li class="daily-cash-closing-active-li"><a href="<?php echo $base_url; ?>daily_cash_closing"><i class="fa fa-calendar-check-o "></i> <span>Daily Cash Closing</span></a></li>
               <?php } ?>
 
 

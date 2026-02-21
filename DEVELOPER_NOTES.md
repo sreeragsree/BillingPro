@@ -683,6 +683,106 @@ for(var i=0; i<rowcount; i++){
 
 ---
 
+## Daily Cash Closing — Changes (2026-02-22)
+
+Summary of code changes, migrations, and SQL related to the Daily Cash Closing feature implemented on 2026-02-22.
+
+- Files edited/added:
+  - `application/models/Daily_cash_closing_model.php`
+    - Added: `get()`, `get_for_date()`
+    - Robust DB error handling for reads
+    - Extended `calculate_summary()` to detect UPI/online/payment gateway keywords (Paytm, GPay, PhonePe, Razorpay, etc.) and map to `upi_sales`/`card_sales`/`other_sales`.
+    - Made `exists_for_date()` safe when DB returns false.
+
+  - `application/controllers/Daily_cash_closing.php`
+    - Normalize `closing_date` early from POST (accepts dd-mm-yyyy, dd/mm/yyyy, yyyy-mm-dd)
+    - Sanitize numeric inputs (remove commas/spaces) and format decimals
+    - Respect `can_override_opening()` helper (admins/super/permissioned users can edit opening)
+    - Include `card_sales`, `upi_sales`, `other_sales` in DB insert
+    - Save `expected_cash` and `difference` when available
+    - Added `report($id)` endpoint to render PDF via Dompdf
+    - Added logging and retry logic for DB insert (retries without optional columns if DB reports unknown column errors)
+
+  - `application/views/daily_cash_closing/add.php`
+    - Prefill opening/closing/expected/difference when record exists
+    - Make inputs readonly for already-closed days
+    - Datepicker fixes: target `#closing_date`, destroy prior instances, force YYYY-MM-DD formatting on selection/blur, and initialize picker display from server date
+    - Client-side expected/difference calculation and confirmation flow
+
+  - `application/views/daily_cash_closing/index.php`
+    - Added `Actions` column with PDF button (permission-checked)
+
+  - `application/views/daily_cash_closing/report.php`
+    - PDF template: shows Store name and Creator name, Card/UPI/Other sales rows, highlights shortage (red) / excess (green)
+
+  - `application/helpers/custom_helper.php`
+    - Added `can_override_opening()` helper (allows inv_userid 1, `is_admin()`, `permissions('daily_cash_closing_override')`, or role containing "SUPER")
+
+  - `application/views/sidebar.php`
+    - Ensured menu shows when `daily_cash_closing_view` permission exists
+
+  - Migrations added/inspected:
+    - `application/migrations/20260221123000_create_daily_cash_closing.php` (existing) — original table create (includes `cash_sales`, `expenses`, etc.)
+    - `application/migrations/20260222120000_update_daily_cash_closing_add_expected_and_unique.php` — adds `expected_cash`, `difference` and unique index `unique_closing_store(closing_date,store_id)` if missing
+    - `application/migrations/20260222123000_add_upi_card_columns_daily_cash_closing.php` — adds `card_sales`, `upi_sales`, `other_sales` if missing
+
+- Complete CREATE TABLE (recommended final schema):
+
+```sql
+CREATE TABLE `daily_cash_closing` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `closing_date` date DEFAULT NULL,
+  `opening_cash` decimal(15,2) DEFAULT '0.00',
+  `cash_sales` decimal(15,2) DEFAULT '0.00',
+  `card_sales` decimal(15,2) DEFAULT '0.00',
+  `upi_sales` decimal(15,2) DEFAULT '0.00',
+  `other_sales` decimal(15,2) DEFAULT '0.00',
+  `expenses` decimal(15,2) DEFAULT '0.00',
+  `closing_cash` decimal(15,2) DEFAULT '0.00',
+  `expected_cash` decimal(15,2) DEFAULT '0.00',
+  `difference` decimal(15,2) DEFAULT '0.00',
+  `note` text,
+  `store_id` int(11) DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_closing_store` (`closing_date`,`store_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+- Permission SQL (example to seed for `store_id=2, role_id=33`):
+
+```sql
+INSERT INTO `db_permissions` (`store_id`,`role_id`,`permissions`)
+VALUES
+ (2, 33, 'daily_cash_closing_view'),
+ (2, 33, 'daily_cash_closing_add'),
+ (2, 33, 'daily_cash_closing_override');
+```
+
+- Notes & next steps:
+  - Run migrations (or execute the ALTER TABLE SQL) to add `expected_cash`, `difference`, `card_sales`, `upi_sales`, and `other_sales` if your DB is missing them.
+  - To run CI migrations from project root:
+    ```bash
+    php index.php migrate
+    ```
+  - Alternatively run these ALTER statements directly in your DB client:
+    ```sql
+    ALTER TABLE `daily_cash_closing` ADD COLUMN `card_sales` DECIMAL(15,2) DEFAULT '0.00' AFTER `cash_sales`;
+    ALTER TABLE `daily_cash_closing` ADD COLUMN `upi_sales`  DECIMAL(15,2) DEFAULT '0.00' AFTER `card_sales`;
+    ALTER TABLE `daily_cash_closing` ADD COLUMN `other_sales`DECIMAL(15,2) DEFAULT '0.00' AFTER `upi_sales`;
+    ALTER TABLE `daily_cash_closing` ADD COLUMN `expected_cash` DECIMAL(15,2) DEFAULT '0.00' AFTER `closing_cash`;
+    ALTER TABLE `daily_cash_closing` ADD COLUMN `difference` DECIMAL(15,2) DEFAULT '0.00' AFTER `expected_cash`;
+    ALTER TABLE `daily_cash_closing` ADD UNIQUE KEY `unique_closing_store` (`closing_date`,`store_id`);
+    ```
+
+  - After schema update: verify a UPI/Online sale is recorded in `db_salespayments.payment_type` (e.g., contains 'UPI','GPay','PhonePe','Paytm' etc.), then create a Daily Cash Closing for that date — the UPI totals will appear in Summary and be saved in `daily_cash_closing.upi_sales`.
+
+  - If you prefer permission-only control for opening override, remove `SUPER` role-name checks from `can_override_opening()` and exclusively rely on `permissions('daily_cash_closing_override')`.
+
+If you want, I can add a short SQL script to detect missing columns and apply the ALTERs automatically on request.
+
+
 # Project Overview
 
 ## System Architecture

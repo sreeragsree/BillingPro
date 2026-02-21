@@ -676,6 +676,21 @@ function is_admin()
   }
   return false;
 }
+
+/**
+ * Determine whether current user may override opening cash.
+ * Allows true for classic admin, user id 1, explicit permission, or roles containing 'super'.
+ */
+function can_override_opening()
+{
+  $CI = &get_instance();
+  if ($CI->session->userdata('inv_userid') == 1) return true;
+  if (is_admin()) return true;
+  if (permissions('daily_cash_closing_override')) return true;
+  $role = strtoupper(trim(get_role_name() ?? ''));
+  if ($role === 'SUPER' || strpos($role, 'SUPER') !== false || strpos($role, 'SUPERADMIN') !== false) return true;
+  return false;
+}
 function is_user()
 {
   return is_admin();
