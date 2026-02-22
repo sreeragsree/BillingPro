@@ -47,6 +47,34 @@
                       <tr><th>Cash Sales</th><td class="text-right" id="sum_cash_sales"><?= isset($s['cash_sales']) ? store_number_format($s['cash_sales']) : '0.00'; ?></td></tr>
                       <tr><th>Card Sales</th><td class="text-right"><?= isset($s['card_sales']) ? store_number_format($s['card_sales']) : '0.00'; ?></td></tr>
                       <tr><th>UPI/Online</th><td class="text-right"><?= isset($s['upi_sales']) ? store_number_format($s['upi_sales']) : '0.00'; ?></td></tr>
+                      <tr>
+                        <th>Other Sales (System 2)</th>
+                        <td class="text-right">
+                            <?php if (!empty($already_closed)) { ?>
+                            <span id="sum_other_sales"><?php
+                              if (isset($record->other_sales) && $record->other_sales !== null && $record->other_sales !== '') {
+                                echo store_number_format($record->other_sales);
+                              } elseif (isset($s['other_sales'])) {
+                                echo store_number_format($s['other_sales']);
+                              } else {
+                                echo '0.00';
+                              }
+                            ?></span>
+                          <?php } else { ?>
+                            <input type="text" class="form-control input-sm text-right" name="other_sales" id="other_sales_input" value="<?= isset($s['other_sales']) ? store_number_format($s['other_sales']) : '0.00'; ?>">
+                          <?php } ?>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th>Cash Out To Home</th>
+                        <td class="text-right">
+                          <?php if (!empty($already_closed)) { ?>
+                            <span id="sum_cash_out_to_home"><?= isset($record->cash_out_to_home) ? store_number_format($record->cash_out_to_home) : '0.00'; ?></span>
+                          <?php } else { ?>
+                            <input type="text" class="form-control input-sm text-right" name="cash_out_to_home" id="cash_out_to_home_input" value="<?= isset($record->cash_out_to_home) ? store_number_format($record->cash_out_to_home) : '0.00'; ?>">
+                          <?php } ?>
+                        </td>
+                      </tr>
                       <tr><th>Expenses</th><td class="text-right" id="sum_expenses"><?= isset($s['expenses']) ? store_number_format($s['expenses']) : '0.00'; ?></td></tr>
                       <tr><th>Refunds</th><td class="text-right" id="sum_refunds"><?= isset($s['refunds']) ? store_number_format($s['refunds']) : '0.00'; ?></td></tr>
                       <tr class="active"><th>Expected Cash</th><th class="text-right" id="expected_cash">0.00</th></tr>
@@ -81,9 +109,9 @@
           <div class="box box-info">
             <div class="box-header with-border"><h4>Help</h4></div>
             <div class="box-body">
-              <p>Opening balance is carried from last closing. Only admins can override.</p>
-              <p>Expected Cash = Opening + Cash Sales - Expenses - Refunds + Cash In - Cash Out</p>
-            </div>
+                        <p>Opening balance is carried from last closing. Only admins can override.</p>
+                        <p>Expected Cash = Opening + Cash Sales - Expenses - Refunds + Cash In - Cash Out + Other Sales (System 2) - Cash Out To Home</p>
+                      </div>
           </div>
         </div>
       </div>
@@ -99,10 +127,17 @@ function parseNum(v){ return parseFloat(String(v).replace(/[,\s]/g,'')) || 0; }
 function updateExpected(){
   var opening = parseNum($('#opening_cash').val());
   var cash_sales = parseNum($('#sum_cash_sales').text());
+  // prefer editable input when present, otherwise read summary span
+  var other_sales = 0;
+  if ($('#other_sales_input').length) other_sales = parseNum($('#other_sales_input').val());
+  else if ($('#sum_other_sales').length) other_sales = parseNum($('#sum_other_sales').text());
+  var cash_out_to_home = 0;
+  if ($('#cash_out_to_home_input').length) cash_out_to_home = parseNum($('#cash_out_to_home_input').val());
+  else if ($('#sum_cash_out_to_home').length) cash_out_to_home = parseNum($('#sum_cash_out_to_home').text());
   var expenses = parseNum($('#sum_expenses').text());
   var refunds = parseNum($('#sum_refunds').text());
   var cash_in = 0; var cash_out = 0;
-  var expected = opening + cash_sales - expenses - refunds + cash_in - cash_out;
+  var expected = opening + cash_sales - expenses - refunds + cash_in - cash_out + other_sales - cash_out_to_home;
   $('#expected_cash').text(expected.toFixed(2));
   $('#expected_cash_input').val(expected.toFixed(2));
   var actual = parseNum($('#closing_cash').val());
@@ -163,7 +198,7 @@ $(function(){
     }
   });
   updateExpected();
-  $('#opening_cash,#closing_cash').on('keyup change', updateExpected);
+  $('#opening_cash,#closing_cash,#other_sales_input,#cash_out_to_home_input').on('keyup change', updateExpected);
   $('#btn_confirm_close').on('click', function(){
     updateExpected();
     var diff = parseNum($('#difference_input').val());

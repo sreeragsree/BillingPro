@@ -34,6 +34,7 @@
         &nbsp;&nbsp; <strong>Created by:</strong> <?php echo htmlspecialchars($user_name); ?>
         &nbsp;&nbsp; <strong>Created at:</strong> <?php echo htmlspecialchars($record->created_at); ?>
     </div>
+    <?php $other_sales_display = (isset($record->other_sales) && $record->other_sales !== null && $record->other_sales !== '') ? floatval($record->other_sales) : floatval($summary['other_sales'] ?? 0); ?>
 
     <table>
         <thead>
@@ -60,8 +61,8 @@
                 <td class="right"><?php echo number_format($summary['upi_sales'] ?? ($record->upi_sales ?? 0),2); ?></td>
             </tr>
             <tr>
-                <td>Other Sales</td>
-                <td class="right"><?php echo number_format($summary['other_sales'] ?? ($record->other_sales ?? 0),2); ?></td>
+                <td>Other Sales (System 2)</td>
+                <td class="right"><?php echo number_format($other_sales_display,2); ?></td>
             </tr>
             <tr>
                 <td>Expenses</td>
@@ -77,11 +78,20 @@
             </tr>
             <tr>
                 <td>Cash Out</td>
-                <td class="right"><?php echo number_format($summary['cash_out'] ?? 0,2); ?></td>
+                <td class="right"><?php echo number_format(floatval($summary['cash_out'] ?? 0),2); ?></td>
+            </tr>
+            <tr>
+                <td>Cash Out To Home</td>
+                <td class="right"><?php echo number_format(floatval($record->cash_out_to_home ?? 0),2); ?></td>
             </tr>
             <tr>
                 <th>Expected Cash</th>
-                <th class="right"><?php echo number_format($record->expected_cash ?? (($record->opening_cash + ($summary['cash_sales'] ?? 0) - ($summary['expenses'] ?? 0) - ($summary['refunds'] ?? 0) + ($summary['cash_in'] ?? 0) - ($summary['cash_out'] ?? 0))),2); ?></th>
+                <?php
+                    $other_sales_val = $other_sales_display;
+                    $cash_out_to_home_val = floatval($record->cash_out_to_home ?? 0);
+                    $expected_calc = floatval($record->opening_cash) + floatval($summary['cash_sales'] ?? 0) - floatval($summary['expenses'] ?? 0) - floatval($summary['refunds'] ?? 0) + floatval($summary['cash_in'] ?? 0) - floatval($summary['cash_out'] ?? 0) + $other_sales_val - $cash_out_to_home_val;
+                ?>
+                <th class="right"><?php echo number_format(floatval($record->expected_cash ?? $expected_calc),2); ?></th>
             </tr>
             <tr>
                 <th>Closing Cash</th>

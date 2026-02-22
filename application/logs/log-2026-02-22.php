@@ -57,3 +57,8 @@ FROM `db_salespayments`
 WHERE `store_id` = '2'
 AND `created_date` = '22-02-2026'
 AND UPPER(payment_type) LIKE '%CASH%'
+ERROR - 2026-02-22 08:39:17 --> 404 Page Not Found: Uploads/site
+ERROR - 2026-02-22 08:39:34 --> 404 Page Not Found: Uploads/site
+ERROR - 2026-02-22 15:48:06 --> 404 Page Not Found: Uploads/site
+ERROR - 2026-02-22 15:48:06 --> 404 Page Not Found: Uploads/site
+ERROR - 2026-02-22 15:58:42 --> 404 Page Not Found: Faviconico/index

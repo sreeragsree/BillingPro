@@ -25,6 +25,57 @@
   - `theme/js/purchase_return.js` autocomplete maps `batch_id` and passes it into `return_row_with_data(item_id, batch_id)`; each new row triggers `.batchListing.change()` to apply the initial batch.
 
 ---
+
+## Daily Cash Closing: Cash Out To Home & Other Sales (System 2) (2026-02-22)
+
+Summary of follow-up changes made on 2026-02-22 to support a "Cash Out To Home" field and ensure "Other Sales (System 2)" is consistently shown and used in calculations and reports.
+
+- Database:
+  - Added migration: `application/migrations/20260222153000_add_cash_out_to_home_daily_cash_closing.php` — adds `cash_out_to_home` DECIMAL(15,2) DEFAULT '0.00' to `daily_cash_closing`.
+
+- Controller:
+  - `application/controllers/Daily_cash_closing.php` — accepts and sanitizes `cash_out_to_home` from the add form, includes it when computing the expected cash, and persists it to the DB.
+  - Expected cash calculation updated to:
+    - Expected = Opening + Cash Sales - Expenses - Refunds + Cash In - Cash Out + Other Sales (System 2) - Cash Out To Home
+
+- View / JS:
+  - `application/views/daily_cash_closing/add.php` — added `Cash Out To Home` input (and readonly display when a closing already exists), updated client-side `updateExpected()` to include the field, and prefer the stored `other_sales` when reopening the same day's closing so the saved System 2 value is displayed.
+
+- PDF Report:
+  - `application/views/daily_cash_closing/report.php` — shows `Other Sales (System 2)` (preferring the stored `other_sales` value) and a new `Cash Out To Home` row; Expected Cash in the PDF now uses Other Sales and subtracts Cash Out To Home.
+
+- Notes / Testing:
+  - Run migrations (or add the column manually) before creating closings that include `cash_out_to_home`:
+    ```sql
+    ALTER TABLE daily_cash_closing ADD COLUMN cash_out_to_home DECIMAL(15,2) DEFAULT '0.00';
+    ```
+  - Test cases:
+    - Create a closing with non-zero Other Sales (System 2) and Cash Out To Home and verify the add form shows stored Other Sales when reopening the same date.
+    - Generate the PDF report and verify Other Sales (System 2) and Cash Out To Home are shown, and Expected Cash matches the UI calculation.
+
+If you want, I can also:
+- Add `cash_out_to_home` to the index/listing view and export columns.
+- Backfill existing records with a default `0.00` for `cash_out_to_home` via a small migration script.
+
+## Customer Groups: Sales Integration (2026-02-22)
+
+Summary of Customer Groups support added to the Sales flow to allow grouping customers and applying group-specific behavior (discounts, pricing, reporting).
+
+- Key behavior:
+  - Sales form now exposes a `Customer Group` selection when a customer is chosen; the selected group affects pricing/discounts where configured.
+  - When a customer with an assigned group is selected, the sales UI displays the group name and applies any group-level default discount to the totals.
+  - Reports and exports can be filtered or grouped by `Customer Group` to analyze sales by segment.
+
+- Files touched (high level):
+  - `application/views/sales.php` — UI: customer selector enhanced to show group, and group-based discount display; persisted fields for group on save.
+  - `application/controllers/Sales.php` — reads selected customer group, applies group defaults when computing totals if configured.
+  - `application/models/Customers_model.php` / `application/models/Customer_groups_model.php` — helper methods to fetch group info and defaults.
+
+- Notes / Testing:
+  - Verify selecting different customers results in the correct group showing and group discount being applied.
+  - Ensure saved sales records include `customer_group` or `customer_group_id` for reporting.
+  - If you want, I can add group filters to Sales reports and the POS UI.
+
 # Developer Notes: POS Invoice Updates (2025-10-22)
 
 ## Permission Management

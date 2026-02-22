@@ -39,6 +39,8 @@ class Daily_cash_closing extends MY_Controller {
                 $data['note'] = isset($rec->note) ? $rec->note : '';
                 $data['expected_cash'] = isset($rec->expected_cash) ? $rec->expected_cash : null;
                 $data['difference'] = isset($rec->difference) ? $rec->difference : null;
+                // expose full record to view for display of stored fields like other_sales
+                $data['record'] = $rec;
             }
         }
         $this->load->view('daily_cash_closing/add', $data);
@@ -84,12 +86,19 @@ class Daily_cash_closing extends MY_Controller {
 
             // sanitize other numeric inputs
             $post['closing_cash'] = isset($post['closing_cash']) ? str_replace([',',' '], '', $post['closing_cash']) : 0;
+            $post['cash_out_to_home'] = isset($post['cash_out_to_home']) ? str_replace([',',' '], '', $post['cash_out_to_home']) : 0;
             $post['expected_cash'] = isset($post['expected_cash']) ? str_replace([',',' '], '', $post['expected_cash']) : 0;
             $post['difference'] = isset($post['difference']) ? str_replace([',',' '], '', $post['difference']) : 0;
 
-            // calculate expected cash using summary (server-side authoritative)
+            // calculate expected cash using summary but allow user override for other_sales
             $summary = $this->dcc->calculate_summary($post['closing_date'], $store_id);
-            $expected_calc = floatval($post['opening_cash']) + floatval($summary['cash_sales']) - floatval($summary['expenses']) - floatval($summary['refunds']) - floatval($summary['cash_out']) + floatval($summary['cash_in']);
+            // allow post override for other_sales if provided (non-empty)
+            if (isset($post['other_sales']) && $post['other_sales'] !== '') {
+                $post_other_sales = str_replace([',',' '], '', $post['other_sales']);
+                $summary['other_sales'] = floatval($post_other_sales);
+            }
+            // Expected Cash = Opening + Cash Sales - Expenses - Refunds + Cash In - Cash Out + Other Sales - Cash Out To Home
+            $expected_calc = floatval($post['opening_cash']) + floatval($summary['cash_sales']) - floatval($summary['expenses']) - floatval($summary['refunds']) + floatval($summary['cash_in']) - floatval($summary['cash_out']) + floatval($summary['other_sales']) - floatval($post['cash_out_to_home']);
 
             $insert = array(
                 'closing_date' => $post['closing_date'],
@@ -97,7 +106,9 @@ class Daily_cash_closing extends MY_Controller {
                 'cash_sales'   => isset($summary['cash_sales']) ? number_format(floatval($summary['cash_sales']),2,'.','') : (isset($post['cash_sales']) ? number_format(floatval($post['cash_sales']),2,'.','') : '0.00'),
                 'card_sales'   => isset($summary['card_sales']) ? number_format(floatval($summary['card_sales']),2,'.','') : (isset($post['card_sales']) ? number_format(floatval($post['card_sales']),2,'.','') : '0.00'),
                 'upi_sales'    => isset($summary['upi_sales']) ? number_format(floatval($summary['upi_sales']),2,'.','') : (isset($post['upi_sales']) ? number_format(floatval($post['upi_sales']),2,'.','') : '0.00'),
-                'other_sales'  => isset($summary['other_sales']) ? number_format(floatval($summary['other_sales']),2,'.','') : (isset($post['other_sales']) ? number_format(floatval($post['other_sales']),2,'.','') : '0.00'),
+                // prefer user-provided other_sales when present, otherwise use computed summary
+                'other_sales'  => (isset($post['other_sales']) && $post['other_sales'] !== '') ? number_format(floatval(str_replace([',',' '], '', $post['other_sales'])),2,'.','') : (isset($summary['other_sales']) ? number_format(floatval($summary['other_sales']),2,'.','') : '0.00'),
+                'cash_out_to_home' => number_format(floatval($post['cash_out_to_home']),2,'.',''),
                 'expenses'     => isset($summary['expenses']) ? number_format(floatval($summary['expenses']),2,'.','') : (isset($post['expenses']) ? number_format(floatval($post['expenses']),2,'.','') : '0.00'),
                 'closing_cash' => number_format(floatval($post['closing_cash']),2,'.',''),
                 'expected_cash'=> number_format(floatval($post['expected_cash']) ? floatval($post['expected_cash']) : $expected_calc,2,'.',''),
